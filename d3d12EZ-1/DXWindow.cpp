@@ -2,6 +2,7 @@
 
 bool DXWindow::Init()
 {
+    // Define the window class
 	WNDCLASSEXW wcex{};
     wcex.cbSize = sizeof(wcex); // 
     wcex.style = CS_OWNDC; // window style
@@ -13,17 +14,17 @@ bool DXWindow::Init()
     wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW); // the cursor graphic to be used
     wcex.hbrBackground = nullptr; // the background color
     wcex.lpszMenuName = nullptr; // name of the menu
-    wcex.lpszClassName = L"D3D12ExWndCls"; // name of the window class
+    wcex.lpszClassName = L"D3D12EzWndCls"; // name of the window class
     wcex.hIconSm = LoadIconW(nullptr, IDI_APPLICATION); // small version of the window icon
 
+    // Register the window class, then verify its registration
     m_wndClass = RegisterClassExW(&wcex);
-
     if (m_wndClass == 0)
     {
         return false;
     }
 
-    // Setup for opening window on same monitor as cursor
+    // Setup for opening window on same monitor as cursor, default being primary monitor
     POINT pos{ 0,0 };
     GetCursorPos(&pos);
     HMONITOR monitor = MonitorFromPoint(pos, MONITOR_DEFAULTTOPRIMARY);
@@ -54,14 +55,13 @@ void DXWindow::Update()
     MSG msg;
     while (PeekMessageW(&msg, m_window, 0, 0, PM_REMOVE))
     {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
+        TranslateMessage(&msg); // Translate the message (weird MS data structure stuff makes this necessary)
+        DispatchMessageW(&msg); 
     }
 }
 
 void DXWindow::Shutdown()
 {
-
     if (m_window)
     {
         DestroyWindow(m_window);
@@ -81,5 +81,5 @@ LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LP
         Get().m_shouldClose = true;
         return 0;
     }
-    return DefWindowProcW(wnd, msg, wParam, lParam);
+    return DefWindowProcW(wnd, msg, wParam, lParam); // If the window message can't be handled here, use the default behavior
 }

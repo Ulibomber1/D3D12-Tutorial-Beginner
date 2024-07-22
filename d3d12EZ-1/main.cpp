@@ -15,7 +15,7 @@ int main()
 	{
 		while (!DXWindow::Get().ShouldClose())
 		{
-			DXWindow::Get().Update();
+			DXWindow::Get().Update(); // Poll the window, so that it's considered 'responding'
 			auto* cmdList = DXContext::Get().InitCommandList();
 
 			// setup
