@@ -25,8 +25,12 @@ int main()
 			DXContext::Get().ExecuteCommandList();
 			
 			// Show the render
+			DXWindow::Get().Present();
 
 		}
+
+		// Flush command queue
+		DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
 
 		DXWindow::Get().Shutdown();
 		DXContext::Get().Shutdown();

@@ -46,6 +46,37 @@ bool DXWindow::Init()
         nullptr, 
         wcex.hInstance, 
         nullptr);
+    if (m_window == nullptr) 
+    {
+        return false;
+    }
+
+    // Describe Swap Chain
+    DXGI_SWAP_CHAIN_DESC1 swd{};
+    swd.Width = 1920;
+    swd.Height = 1080;
+    swd.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA format and bit depth
+    swd.Stereo = false;
+    swd.SampleDesc.Count = 1; // How many pixels per actual pixel
+    swd.SampleDesc.Quality = 0; // Antialiasing quality (0 means off)
+    swd.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT; // Defines how the buffer is used; which buffer is drawn to, and whether it's drawn by CPU or GPU(?)
+    swd.BufferCount = GetFrameCount(); // how many buffers are used in the swap chain (3 are typcially used by vsync in D3D12)
+    swd.Scaling = DXGI_SCALING_STRETCH; // The type of scalinng to be used if the window gets resized 
+    swd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // Define what swap behavior is used
+    swd.AlphaMode = DXGI_ALPHA_MODE_IGNORE; // Defines the type of alpha blending that is used
+    swd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING; // Extra option flags; here we allow mode switching and screen tearing
+
+    DXGI_SWAP_CHAIN_FULLSCREEN_DESC sfd{};
+    sfd.Windowed = true; // Specify that the window is not fullscreen 
+
+    // Swap Chain creation
+    auto& factory = DXContext::Get().GetFactory();
+    ComPointer<IDXGISwapChain1> sc1;
+    factory->CreateSwapChainForHwnd(DXContext::Get().GetCommandQueue(), m_window, &swd, &sfd, nullptr, &sc1);
+    if (!sc1.QueryInterface(m_swapChain))
+    {
+        return false;
+    }
 
     return true;
 }
@@ -60,8 +91,15 @@ void DXWindow::Update()
     }
 }
 
+void DXWindow::Present()
+{
+    m_swapChain->Present(1, 0);
+}
+
 void DXWindow::Shutdown()
 {
+    m_swapChain.Release();
+
     if (m_window)
     {
         DestroyWindow(m_window);
