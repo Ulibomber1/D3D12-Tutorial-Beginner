@@ -56,7 +56,7 @@ bool DXWindow::Init()
     swd.Width = 1920;
     swd.Height = 1080;
     swd.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA format and bit depth
-    swd.Stereo = false;
+    swd.Stereo = false; // enables stereo video output, which allows for 3D glasses to be used
     swd.SampleDesc.Count = 1; // How many pixels per actual pixel
     swd.SampleDesc.Quality = 0; // Antialiasing quality (0 means off)
     swd.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT; // Defines how the buffer is used; which buffer is drawn to, and whether it's drawn by CPU or GPU(?)
@@ -111,10 +111,31 @@ void DXWindow::Shutdown()
     }
 }
 
+void DXWindow::Resize()
+{
+    RECT cr;
+    if (GetClientRect(m_window, &cr))
+    {
+        m_width = cr.right - cr.left;
+        m_height = cr.bottom - cr.top;
+
+        m_swapChain->ResizeBuffers(GetFrameCount(), m_width, m_height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
+        m_shouldResize = false;
+
+    }
+}
+
 LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
+    case WM_SIZE:
+        // if an lparam containing width and height are given in the message, and neither width or height are the same as before:
+        if (lParam && (HIWORD(lParam) != Get().m_height || LOWORD(lParam) != Get().m_width))
+        {
+            Get().m_shouldResize = true; // Toggle flag for buffer/swapchain resizing
+        }
+        break;
     case WM_CLOSE:
         Get().m_shouldClose = true;
         return 0;

@@ -16,15 +16,21 @@ int main()
 		while (!DXWindow::Get().ShouldClose())
 		{
 			DXWindow::Get().Update(); // Poll the window, so that it's considered 'responding'
+
+			// handle resizing
+			if (DXWindow::Get().ShouldResize())
+			{
+				DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
+				DXWindow::Get().Resize();
+			}
+
+			// begin drawing
 			auto* cmdList = DXContext::Get().InitCommandList();
 
-			// setup
-			
-			// draw/render
+			// Draw
 
+			// FInish and Show the render
 			DXContext::Get().ExecuteCommandList();
-			
-			// Show the render
 			DXWindow::Get().Present();
 
 		}

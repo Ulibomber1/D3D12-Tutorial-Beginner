@@ -11,10 +11,16 @@ public:
 	void Update();
 	void Present();
 	void Shutdown();
+	void Resize();
 
 	inline bool ShouldClose() const
 	{
 		return m_shouldClose;
+	}
+
+	inline bool ShouldResize() const
+	{
+		return m_shouldResize;
 	}
 
 	static constexpr size_t GetFrameCount()
@@ -27,6 +33,10 @@ private:
 	ATOM m_wndClass = 0; // stores the window class instance
 	HWND m_window = nullptr; // stores a reference to the window instance
 	bool m_shouldClose = false; 
+
+	bool m_shouldResize = false;
+	UINT m_height = 1080;
+	UINT m_width = 1920;
 
 	ComPointer<IDXGISwapChain3> m_swapChain;
 
