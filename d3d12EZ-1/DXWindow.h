@@ -27,14 +27,18 @@ public:
 	{
 		return m_isFullscreen;
 	}
+	static constexpr UINT FrameCount = 2;
 	static constexpr UINT GetFrameCount()
 	{
-		return 2;
+		return FrameCount;
 	}
 
 	
 
 private:
+	bool GetBuffers();
+	void ReleaseBuffers();
+
 	static LRESULT CALLBACK OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	ATOM m_wndClass = 0; // stores the window class instance
 	HWND m_window = nullptr; // stores a reference to the window instance
@@ -47,6 +51,8 @@ private:
 	bool m_isFullscreen = false;
 
 	ComPointer<IDXGISwapChain3> m_swapChain;
+	ComPointer<ID3D12Resource2> m_buffers[FrameCount];
+
 
 // Singleton
 public:
