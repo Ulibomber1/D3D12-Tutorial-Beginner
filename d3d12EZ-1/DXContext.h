@@ -13,7 +13,7 @@ public:
 	ID3D12GraphicsCommandList6* InitCommandList();
 	void ExecuteCommandList();
 
-	inline void Flush(size_t count)
+	inline void Flush(size_t count) // Flushes command queue a certain number of times specified by 'count'
 	{
 		for (size_t i = 0; i < count; i++)
 		{
