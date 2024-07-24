@@ -20,7 +20,7 @@ int main()
 			// handle resizing
 			if (DXWindow::Get().ShouldResize())
 			{
-				DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
+				DXContext::Get().Flush(DXWindow::Get().GetFrameCount()); // Flush Command queue 
 				DXWindow::Get().Resize();
 			}
 
@@ -29,7 +29,7 @@ int main()
 
 			// Draw
 
-			// FInish and Show the render
+			// Finish and Show the render
 			DXContext::Get().ExecuteCommandList();
 			DXWindow::Get().Present();
 

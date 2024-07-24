@@ -62,7 +62,7 @@ void DXContext::Shutdown()
 	m_device.Release();
 }
 
-// exit() use should be refactored
+// Sets a synchronization fence and waits for all workloads behind the fence to finish; exit() use should be refactored
 void DXContext::SignalAndWait()
 {
 	m_cmdQueue->Signal(m_fence, ++m_fenceValue);
