@@ -33,7 +33,6 @@ int main()
 			// Finish and Show the render
 			DXContext::Get().ExecuteCommandList();
 			DXWindow::Get().Present();
-
 		}
 
 		// Flush command queue

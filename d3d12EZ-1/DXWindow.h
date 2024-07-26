@@ -27,8 +27,8 @@ public:
 	{
 		return m_isFullscreen;
 	}
-	static constexpr UINT FrameCount = 2;
-	static constexpr UINT GetFrameCount()
+	static constexpr size_t FrameCount = 2;
+	static constexpr size_t GetFrameCount()
 	{
 		return FrameCount;
 	}

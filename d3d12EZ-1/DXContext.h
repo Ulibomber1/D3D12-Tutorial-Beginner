@@ -40,7 +40,7 @@ private:
 	ComPointer<ID3D12CommandQueue> m_cmdQueue;
 
 	ComPointer<ID3D12CommandAllocator> m_cmdAllocator;
-	ComPointer<ID3D12GraphicsCommandList6> m_cmdList; // ID3D12GraphicsCommandAllocator is the latest supported by Windows 10 Home Version 22H2, Build 19045.4651
+	ComPointer<ID3D12GraphicsCommandList6> m_cmdList; // ID3D12GraphicsCommandList6 is the latest supported by Windows 10 Home Version 22H2, Build 19045.4651
 
 	ComPointer<ID3D12Fence1> m_fence;
 	UINT64 m_fenceValue = 0;

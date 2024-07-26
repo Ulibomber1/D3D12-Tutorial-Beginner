@@ -178,9 +178,9 @@ void DXWindow::SetFullscreen(bool enabled)
 
 bool DXWindow::GetBuffers()
 {
-    for (UINT i = 0; i < FrameCount; ++i)
+    for (size_t i = 0; i < FrameCount; ++i)
     {
-        if (FALSE(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_buffers[i]))))
+        if (FAILED(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_buffers[i]))))
         {
             return false;
         }
@@ -190,7 +190,7 @@ bool DXWindow::GetBuffers()
 
 void DXWindow::ReleaseBuffers()
 {
-    for (UINT i = 0; i < FrameCount; ++i)
+    for (size_t i = 0; i < FrameCount; ++i)
     {
         m_buffers[i].Release();
     }
