@@ -14,6 +14,9 @@ public:
 	void Resize();
 	void SetFullscreen(bool enabled);
 
+	void BeginFrame(ID3D12GraphicsCommandList6* cmdlist);
+	void EndFrame(ID3D12GraphicsCommandList6* cmdlist);
+
 	inline bool ShouldClose() const
 	{
 		return m_shouldClose;
@@ -52,6 +55,7 @@ private:
 
 	ComPointer<IDXGISwapChain3> m_swapChain;
 	ComPointer<ID3D12Resource2> m_buffers[FrameCount];
+	size_t m_currentBufferIndex = 0;
 
 
 // Singleton

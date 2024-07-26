@@ -176,6 +176,36 @@ void DXWindow::SetFullscreen(bool enabled)
     m_isFullscreen = enabled;
 }
 
+void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
+{
+    // Get the currently used buffer's index
+    m_currentBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+    // Describe the resource barrier, a synchronization structure 
+    D3D12_RESOURCE_BARRIER barr;
+    barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify that it's a transition barrier
+    barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE; // Specifies whether the barrier should be floating; if so, what type.
+    barr.Transition.pResource = m_buffers[m_currentBufferIndex]; // The resource is the currently active buffer in the swapchain.
+    barr.Transition.Subresource = 0; // No subresources
+    barr.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // Specify the state before, Present (Common)...
+    barr.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // ...and the state after, Render Target.
+
+    cmdlist->ResourceBarrier(1, &barr);
+}
+
+void DXWindow::EndFrame(ID3D12GraphicsCommandList6* cmdlist)
+{
+    D3D12_RESOURCE_BARRIER barr;
+    barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barr.Transition.pResource = m_buffers[m_currentBufferIndex];
+    barr.Transition.Subresource = 0;
+    barr.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barr.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+    cmdlist->ResourceBarrier(1, &barr);
+}
+
 bool DXWindow::GetBuffers()
 {
     for (size_t i = 0; i < FrameCount; ++i)
