@@ -244,10 +244,10 @@ LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LP
         }
         break;
     case WM_SIZE:
-        // if an lparam containing width and height are given in the message, and neither width or height are the same as before:
+        // if an lparam containing width and height are given in the message, and neither width or height are the same as before...
         if (lParam && (HIWORD(lParam) != Get().m_height || LOWORD(lParam) != Get().m_width))
         {
-            Get().m_shouldResize = true; // Toggle flag for buffer/swapchain resizing
+            Get().m_shouldResize = true; // ...Toggle flag for buffer/swapchain resizing
         }
         break;
     case WM_CLOSE:

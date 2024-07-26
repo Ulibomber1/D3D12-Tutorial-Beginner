@@ -30,13 +30,12 @@ public:
 	{
 		return m_isFullscreen;
 	}
+
 	static constexpr size_t FrameCount = 2;
 	static constexpr size_t GetFrameCount()
 	{
 		return FrameCount;
 	}
-
-	
 
 private:
 	bool GetBuffers();
