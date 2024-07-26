@@ -78,6 +78,29 @@ bool DXWindow::Init()
         return false;
     }
 
+    // Describe RTV Descriptor Heap
+    D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc{};
+    descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // this is a Render Target View
+    descHeapDesc.NumDescriptors = FrameCount; // There are two descriptors
+    descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // No flags
+    descHeapDesc.NodeMask = 0; // no node mask, which
+
+    // Create RTV Descriptor Heap
+    if (FAILED(DXContext::Get().GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap))))
+    {
+        return false;
+    }
+
+    // Create Handles to View
+    auto firstHandle = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart(); // the very first handle in the heap
+    auto handleIncrement = DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV); // the handle heap increment amount
+    for (size_t i = 0; i < FrameCount; ++i)
+    {
+        m_rtvHandles[i] = firstHandle; // set the first handle...
+        m_rtvHandles[i].ptr += handleIncrement * i; // ...then add the increment size of the descriptor handles times i to the pointer to set the pointer correctly.
+    }
+
+
     // Get Buffers
     if (!GetBuffers())
     {
@@ -105,6 +128,8 @@ void DXWindow::Present()
 void DXWindow::Shutdown()
 {
     ReleaseBuffers();
+
+    m_rtvDescHeap.Release();
 
     m_swapChain.Release();
 
@@ -198,6 +223,12 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
     barr.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // ...and the state after, Render Target.
 
     cmdlist->ResourceBarrier(1, &barr);
+
+    // Clear the RTV
+    float clearColor[] = { .6f, .6f, .9f, 1.0f };
+    cmdlist->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], clearColor, 0, nullptr);
+    // Set CPU descriptor handles for the RTVs
+    cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, nullptr);
 }
 
 void DXWindow::EndFrame(ID3D12GraphicsCommandList6* cmdlist)
@@ -221,6 +252,16 @@ bool DXWindow::GetBuffers()
         {
             return false;
         }
+
+        // Describe the RTV Resource
+        D3D12_RENDER_TARGET_VIEW_DESC rtv{};
+        rtv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rtv.Texture2D.MipSlice = 0;
+        rtv.Texture2D.PlaneSlice = 0;
+
+        // Create the RTV resource
+        DXContext::Get().GetDevice()->CreateRenderTargetView(m_buffers[i], &rtv, m_rtvHandles[i]);
     }
     return true;
 }
