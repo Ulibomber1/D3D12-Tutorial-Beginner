@@ -181,7 +181,14 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
     // Get the currently used buffer's index
     m_currentBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-    // Describe the resource barrier, a synchronization structure 
+    /*
+        Three rules of Resource Barriers:
+        1. Constrain states as much as possible
+        2. Avoid uneeded transitions
+        3. Batch barriers (as opposed to interlacing them between various 
+    */
+
+    // Describe the resource barrier, a structure designed to change memory state, flush caches, or ensure pipeline stalls. This all ensures correctness.
     D3D12_RESOURCE_BARRIER barr;
     barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify that it's a transition barrier
     barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE; // Specifies whether the barrier should be floating; if so, what type.
