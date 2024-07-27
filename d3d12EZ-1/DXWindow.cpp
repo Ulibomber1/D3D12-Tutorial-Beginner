@@ -80,10 +80,10 @@ bool DXWindow::Init()
 
     // Describe RTV Descriptor Heap
     D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc{};
-    descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // this is a Render Target View
-    descHeapDesc.NumDescriptors = FrameCount; // There are two descriptors
-    descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // No flags
-    descHeapDesc.NodeMask = 0; // no node mask, which
+    descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // this is a Render Target View heap
+    descHeapDesc.NumDescriptors = FrameCount; // There are two descriptors in this heap
+    descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // No flags, which set options for the heap
+    descHeapDesc.NodeMask = 0; // no node mask, which is responsible for distinguishing adapter nodes. We only use 1 adapter in this program, so 0 is the appropriate value.
 
     // Create RTV Descriptor Heap
     if (FAILED(DXContext::Get().GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap))))
