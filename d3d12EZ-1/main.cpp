@@ -8,6 +8,10 @@
 
 #include <DXContext.h>
 
+void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
+void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
+void initResourceDesc(D3D12_RESOURCE_DESC*);
+
 int main()
 {
 	DXDebugLayer::Get().Init();
@@ -16,31 +20,14 @@ int main()
 		const char* hello = "Hello World!";
 
 		D3D12_HEAP_PROPERTIES hpUpload{};
-		hpUpload.Type = D3D12_HEAP_TYPE_UPLOAD; // What type of heap this is is. We specify one that uploads to the GPU
-		hpUpload.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred 
-		hpUpload.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory
-		hpUpload.CreationNodeMask = 0; // Which GPU the heap shall ber stored. We choose the first one.
-		hpUpload.VisibleNodeMask = 0; // Where the memory can be seen from
+		initHeapPropsUpload(&hpUpload);
 
 		D3D12_HEAP_PROPERTIES hpDefault{};
-		hpDefault.Type = D3D12_HEAP_TYPE_DEFAULT; // What type of heap this is is. We specify one is default
-		hpDefault.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred.
-		hpDefault.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory.
-		hpDefault.CreationNodeMask = 0; // Which GPU the heap shall ber stored. We choose the first one.
-		hpDefault.VisibleNodeMask = 0; // Where the memory can be seen from.
+		initHeapPropsDefault(&hpDefault);
 
+		// == Upload & Vertex Buffer Description ==
 		D3D12_RESOURCE_DESC rd{};
-		rd.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
-		rd.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-		rd.Width = 1024; // width of the buffer. 1024 is an arbitrary bit width
-		rd.Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
-		rd.DepthOrArraySize = 1; // same as previous comment
-		rd.MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
-		rd.Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
-		rd.SampleDesc.Count = 1; // the amount of samples
-		rd.SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
-		rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
-		rd.Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
+		initResourceDesc(&rd);
 
 		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
@@ -92,4 +79,37 @@ int main()
 		DXContext::Get().Shutdown();
 	}
 	DXDebugLayer::Get().Shutdown();
+}
+
+void initHeapPropsUpload(D3D12_HEAP_PROPERTIES* heapProps)
+{
+	heapProps->Type = D3D12_HEAP_TYPE_UPLOAD; // What type of heap this is is. We specify one that uploads to the GPU
+	heapProps->MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred 
+	heapProps->CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory
+	heapProps->CreationNodeMask = 0; // Which GPU the heap shall be stored. We choose the first one.
+	heapProps->VisibleNodeMask = 0; // Where the memory can be seen from
+}
+
+void initHeapPropsDefault(D3D12_HEAP_PROPERTIES* heapProps)
+{
+	heapProps->Type = D3D12_HEAP_TYPE_DEFAULT; // What type of heap this is is. We specify one is default
+	heapProps->MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred.
+	heapProps->CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory.
+	heapProps->CreationNodeMask = 0; // Which GPU the heap shall be stored. We choose the first one.
+	heapProps->VisibleNodeMask = 0; // Where the memory can be seen from.
+}
+
+void initResourceDesc(D3D12_RESOURCE_DESC* rscDesc)
+{
+	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
+	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
+	rscDesc->Width = 1024; // width of the buffer. 1024 is an arbitrary bit width
+	rscDesc->Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
+	rscDesc->DepthOrArraySize = 1; // same as previous comment
+	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
+	rscDesc->Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
+	rscDesc->SampleDesc.Count = 1; // the amount of samples
+	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
+	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
+	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 }
