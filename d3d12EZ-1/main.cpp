@@ -17,13 +17,27 @@ int main()
 	DXDebugLayer::Get().Init();
 	if (DXContext::Get().Init() && DXWindow::Get().Init())
 	{
-		const char* hello = "Hello World!";
-
 		D3D12_HEAP_PROPERTIES hpUpload{};
 		initHeapPropsUpload(&hpUpload);
 
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
+
+		// == Vertex Data == 
+		struct Vertex
+		{
+			float x, y;
+		};
+		Vertex vertices[] =
+		{
+			{ -1.f, -1.f},
+			{  0.f,  1.f},
+			{  1.f, -1.f},
+		};
+		D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
+		{
+			{"Position", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		};
 
 		// == Upload & Vertex Buffer Description ==
 		D3D12_RESOURCE_DESC rd{};
@@ -39,13 +53,27 @@ int main()
 		uploadRange.Begin = 0;
 		uploadRange.End = 1023;
 		uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
-		memcpy(uploadBufferAddress, hello, strlen(hello) + 1);
+		memcpy(uploadBufferAddress, vertices, sizeof(vertices));
 		uploadBuffer->Unmap(0, &uploadRange);
 
 		// copy CPU resource --> GPU resource
 		auto* cmdList = DXContext::Get().InitCommandList();
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, 1024);
 		DXContext::Get().ExecuteCommandList();
+
+		// == Pipeline State ==
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
+		gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
+		gfxPsod.InputLayout.pInputElementDescs = vertexLayout;
+		gfxPsod.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+		//DXContext::Get().GetDevice()->createpipeline
+
+		// == Vertex Buffer View ==
+		D3D12_VERTEX_BUFFER_VIEW vbv{};
+		vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+		vbv.SizeInBytes = sizeof(vertices) * _countof(vertices);
+		vbv.StrideInBytes = sizeof(Vertex);
 
 
 		DXWindow::Get().SetFullscreen(true);
@@ -64,7 +92,14 @@ int main()
 			cmdList = DXContext::Get().InitCommandList();
 
 			DXWindow::Get().BeginFrame(cmdList);
+			
+			// == Input Assembler ==
+			cmdList->IASetVertexBuffers(0, 1, &vbv);
+			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			
 			// Draw
+			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
+
 			DXWindow::Get().EndFrame(cmdList);
 
 			// Finish and Show the render
@@ -74,6 +109,10 @@ int main()
 
 		// Flush command queue
 		DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
+
+		// Release Buffers
+		vertexBuffer.Release();
+		uploadBuffer.Release();
 
 		DXWindow::Get().Shutdown();
 		DXContext::Get().Shutdown();
