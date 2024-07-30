@@ -15,19 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WinInclude.h">
+    <ClInclude Include="WinSupport\WinInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ComPointer.h">
+    <ClInclude Include="WinSupport\ComPointer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DXDebugLayer.h">
+    <ClInclude Include="DXDebug\DXDebugLayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DXContext.h">
+    <ClInclude Include="DXSupport\DXContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DXWindow.h">
+    <ClInclude Include="DXSupport\DXWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXSupport\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,14 +38,21 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DXDebugLayer.cpp">
+    <ClCompile Include="DXDebug\DXDebugLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DXContext.cpp">
+    <ClCompile Include="DXSupport\DXContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DXWindow.cpp">
+    <ClCompile Include="DXSupport\DXWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DXSupport\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\VertexShader.hlsl" />
+    <FxCompile Include="Shaders\PixelShader.hlsl" />
   </ItemGroup>
 </Project>

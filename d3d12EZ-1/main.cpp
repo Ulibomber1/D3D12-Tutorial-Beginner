@@ -2,8 +2,8 @@
 
 #include <WinSupport/WinInclude.h>
 #include <WinSupport/ComPointer.h>
-#include <DXSUpport/DXWindow.h>
-
+#include <DXSupport/DXWindow.h>
+#include <DXSupport/Shader.h>
 #include <DXDebug/DXDebugLayer.h>
 
 #include <DXSupport/DXContext.h>
@@ -61,11 +61,22 @@ int main()
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, 1024);
 		DXContext::Get().ExecuteCommandList();
 
+		// == Shaders ==
+		Shader vertexShader("VertexShader.cso");
+		Shader pixelShader("PixelShader.cso");
+
 		// == Pipeline State Description ==
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
 		gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
 		gfxPsod.InputLayout.pInputElementDescs = vertexLayout;
 		gfxPsod.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+		gfxPsod.VS.BytecodeLength = vertexShader.GetSize();
+		gfxPsod.VS.pShaderBytecode = vertexShader.GetBuffer();
+		// TODO: Rasterizer
+		gfxPsod.PS.BytecodeLength = pixelShader.GetSize();
+		gfxPsod.PS.pShaderBytecode = pixelShader.GetBuffer();
+		// TODO: Output Merger
+
 
 		//DXContext::Get().GetDevice()->createpipeline
 
