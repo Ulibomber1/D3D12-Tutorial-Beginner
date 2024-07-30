@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include <WinInclude.h>
-#include <ComPointer.h>
-#include <DXWindow.h>
+#include <WinSupport/WinInclude.h>
+#include <WinSupport/ComPointer.h>
+#include <DXSUpport/DXWindow.h>
 
-#include <DXDebugLayer.h>
+#include <DXDebug/DXDebugLayer.h>
 
-#include <DXContext.h>
+#include <DXSupport/DXContext.h>
 
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
 void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
@@ -61,7 +61,7 @@ int main()
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, 1024);
 		DXContext::Get().ExecuteCommandList();
 
-		// == Pipeline State ==
+		// == Pipeline State Description ==
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
 		gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
 		gfxPsod.InputLayout.pInputElementDescs = vertexLayout;

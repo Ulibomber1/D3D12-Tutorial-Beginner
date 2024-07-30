@@ -1,8 +1,8 @@
 #pragma once
 
-#include <WinInclude.h>
-#include <ComPointer.h>
-#include <DXContext.h>
+#include <WinSupport/WinInclude.h>
+#include <WinSupport/ComPointer.h>
+#include <DXSupport/DXContext.h>
 
 class DXWindow
 {

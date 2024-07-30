@@ -1,7 +1,7 @@
 #pragma once
 
-#include <WinInclude.h>
-#include <ComPointer.h>
+#include <WinSupport/WinInclude.h>
+#include <WinSupport/ComPointer.h>
 
 class DXDebugLayer
 {
