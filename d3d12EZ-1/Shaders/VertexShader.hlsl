@@ -1,3 +1,6 @@
+#include "RootSignature.hlsl"
+
+[RootSignature(ROOTSIG)]
 // takes a 2D position as input, and returns the position in homogeneous 3D space
 float4 main(float2 pos : Position) : SV_Position
 {

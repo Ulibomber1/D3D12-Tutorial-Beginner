@@ -1,3 +1,6 @@
+#include "RootSignature.hlsl"
+
+[RootSignature(ROOTSIG)]
 // takes an RGBA or other 4-float value and writes it to a render target
 float4 main() : SV_Target
 {
