@@ -11,6 +11,7 @@
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
 void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
 void initResourceDesc(D3D12_RESOURCE_DESC*);
+void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID3D12RootSignature> rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
 
 int main()
 {
@@ -72,41 +73,7 @@ int main()
 
 		// == Pipeline State Description ==
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
-		gfxPsod.pRootSignature = rootSignature;
-		gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
-		gfxPsod.InputLayout.pInputElementDescs = vertexLayout;
-		gfxPsod.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
-		gfxPsod.VS.BytecodeLength = vertexShader.GetSize();
-		gfxPsod.VS.pShaderBytecode = vertexShader.GetBuffer();
-		gfxPsod.PS.BytecodeLength = pixelShader.GetSize();
-		gfxPsod.PS.pShaderBytecode = pixelShader.GetBuffer();
-		gfxPsod.DS.BytecodeLength = 0;
-		gfxPsod.DS.pShaderBytecode = nullptr;
-		gfxPsod.HS.BytecodeLength = 0;
-		gfxPsod.HS.pShaderBytecode = nullptr;
-		gfxPsod.GS.BytecodeLength = 0;
-		gfxPsod.GS.pShaderBytecode = nullptr;
-		gfxPsod.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		gfxPsod.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-		gfxPsod.RasterizerState.FrontCounterClockwise = FALSE;
-		gfxPsod.RasterizerState.DepthBias = 0;
-		gfxPsod.RasterizerState.DepthBiasClamp = .0f;
-		gfxPsod.RasterizerState.SlopeScaledDepthBias = .0f;
-		gfxPsod.RasterizerState.DepthClipEnable = FALSE;
-		gfxPsod.RasterizerState.MultisampleEnable = FALSE;
-		gfxPsod.RasterizerState.AntialiasedLineEnable = FALSE;
-		gfxPsod.RasterizerState.ForcedSampleCount = 0;
-		gfxPsod.StreamOutput.NumEntries = 0;
-		gfxPsod.StreamOutput.NumStrides = 0;
-		gfxPsod.StreamOutput.pBufferStrides = nullptr;
-		gfxPsod.StreamOutput.pSODeclaration = nullptr;
-		gfxPsod.StreamOutput.RasterizedStream = 0;
-		// TODO: BlendState, DepthStencilState, SampleMask, NumRenderTargets, RTVFormats, DSVFormat, SampleDesc
-		gfxPsod.NodeMask = 0;
-		gfxPsod.CachedPSO.CachedBlobSizeInBytes = 0;
-		gfxPsod.CachedPSO.pCachedBlob = nullptr;
-		gfxPsod.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		// TODO: Output Merger
+		initPipelineState(&gfxPsod, rootSignature, vertexLayout, _countof(vertexLayout), &vertexShader, &pixelShader); // we pass vertexLayout array since it will decay to a pointer anyways
 
 		//DXContext::Get().GetDevice()->createpipeline
 
@@ -192,4 +159,43 @@ void initResourceDesc(D3D12_RESOURCE_DESC* rscDesc)
 	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
 	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
 	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
+}
+
+void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID3D12RootSignature> rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader)
+{
+	gfxpsd->pRootSignature = rootSig; // give pointer to a root signature (created by DXContext)
+	gfxpsd->InputLayout.NumElements = verLayoutSize; // the number of elements in the vertex layout
+	gfxpsd->InputLayout.pInputElementDescs = verLayout; // pointer to the vertex layout array
+	gfxpsd->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED; // 
+	gfxpsd->VS.BytecodeLength = verShader->GetSize();     // give the bytecode lengths and the pointer to the bytecode for each pipeline shader
+	gfxpsd->VS.pShaderBytecode = verShader->GetBuffer();
+	gfxpsd->PS.BytecodeLength = pixShader->GetSize();
+	gfxpsd->PS.pShaderBytecode = pixShader->GetBuffer();
+	gfxpsd->DS.BytecodeLength = 0;
+	gfxpsd->DS.pShaderBytecode = nullptr;
+	gfxpsd->HS.BytecodeLength = 0;
+	gfxpsd->HS.pShaderBytecode = nullptr;
+	gfxpsd->GS.BytecodeLength = 0;
+	gfxpsd->GS.pShaderBytecode = nullptr;
+	gfxpsd->RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // define the fill mode, which defines how the drawn objects are filled in for enclosed faces
+	gfxpsd->RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // define what faces are culled, if at all
+	gfxpsd->RasterizerState.FrontCounterClockwise = FALSE; // define which face is the front
+	gfxpsd->RasterizerState.DepthBias = 0; // depth bias will attempt to push drawn objects forward
+	gfxpsd->RasterizerState.DepthBiasClamp = .0f;
+	gfxpsd->RasterizerState.SlopeScaledDepthBias = .0f;
+	gfxpsd->RasterizerState.DepthClipEnable = FALSE; // set whether z-clipping can occur
+	gfxpsd->RasterizerState.MultisampleEnable = FALSE; // set whether multisample will be on
+	gfxpsd->RasterizerState.AntialiasedLineEnable = FALSE; // set whether anti-aliasing is on
+	gfxpsd->RasterizerState.ForcedSampleCount = 0; // the sample count for anti-aliasing
+	gfxpsd->StreamOutput.NumEntries = 0; // StreamOutput is a layer that streams transformed vertex data back to memory resources. We do not use it here. 
+	gfxpsd->StreamOutput.NumStrides = 0;
+	gfxpsd->StreamOutput.pBufferStrides = nullptr;
+	gfxpsd->StreamOutput.pSODeclaration = nullptr;
+	gfxpsd->StreamOutput.RasterizedStream = 0;
+	// TODO: BlendState, DepthStencilState, SampleMask, NumRenderTargets, RTVFormats, DSVFormat, SampleDesc
+	gfxpsd->NodeMask = 0;
+	gfxpsd->CachedPSO.CachedBlobSizeInBytes = 0;
+	gfxpsd->CachedPSO.pCachedBlob = nullptr;
+	gfxpsd->Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
+	// TODO: Output Merger
 }
