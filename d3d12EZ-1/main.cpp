@@ -75,7 +75,8 @@ int main()
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
 		initPipelineState(&gfxPsod, rootSignature, vertexLayout, _countof(vertexLayout), &vertexShader, &pixelShader); // we pass vertexLayout array since it will decay to a pointer anyways
 
-		//DXContext::Get().GetDevice()->createpipeline
+		ComPointer<ID3D12PipelineState> pso;
+		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
 
 		// == Vertex Buffer View ==
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
@@ -101,6 +102,10 @@ int main()
 
 			DXWindow::Get().BeginFrame(cmdList);
 			
+			// == PSO ==
+			cmdList->SetPipelineState(pso);
+			cmdList->SetGraphicsRootSignature(rootSignature);
+
 			// == Input Assembler ==
 			cmdList->IASetVertexBuffers(0, 1, &vbv);
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -164,9 +169,12 @@ void initResourceDesc(D3D12_RESOURCE_DESC* rscDesc)
 void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID3D12RootSignature> rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader)
 {
 	gfxpsd->pRootSignature = rootSig; // give pointer to a root signature (created by DXContext)
+
 	gfxpsd->InputLayout.NumElements = verLayoutSize; // the number of elements in the vertex layout
 	gfxpsd->InputLayout.pInputElementDescs = verLayout; // pointer to the vertex layout array
+
 	gfxpsd->IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED; // 
+
 	gfxpsd->VS.BytecodeLength = verShader->GetSize();     // give the bytecode lengths and the pointer to the bytecode for each pipeline shader
 	gfxpsd->VS.pShaderBytecode = verShader->GetBuffer();
 	gfxpsd->PS.BytecodeLength = pixShader->GetSize();
@@ -177,6 +185,8 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID
 	gfxpsd->HS.pShaderBytecode = nullptr;
 	gfxpsd->GS.BytecodeLength = 0;
 	gfxpsd->GS.pShaderBytecode = nullptr;
+
+	gfxpsd->PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	gfxpsd->RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // define the fill mode, which defines how the drawn objects are filled in for enclosed faces
 	gfxpsd->RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // define what faces are culled, if at all
 	gfxpsd->RasterizerState.FrontCounterClockwise = FALSE; // define which face is the front
@@ -187,15 +197,54 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID
 	gfxpsd->RasterizerState.MultisampleEnable = FALSE; // set whether multisample will be on
 	gfxpsd->RasterizerState.AntialiasedLineEnable = FALSE; // set whether anti-aliasing is on
 	gfxpsd->RasterizerState.ForcedSampleCount = 0; // the sample count for anti-aliasing
+
 	gfxpsd->StreamOutput.NumEntries = 0; // StreamOutput is a layer that streams transformed vertex data back to memory resources. We do not use it here. 
 	gfxpsd->StreamOutput.NumStrides = 0;
 	gfxpsd->StreamOutput.pBufferStrides = nullptr;
 	gfxpsd->StreamOutput.pSODeclaration = nullptr;
 	gfxpsd->StreamOutput.RasterizedStream = 0;
-	// TODO: BlendState, DepthStencilState, SampleMask, NumRenderTargets, RTVFormats, DSVFormat, SampleDesc
+
+	gfxpsd->NumRenderTargets = 1;
+	gfxpsd->RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	gfxpsd->DSVFormat = DXGI_FORMAT_UNKNOWN;
+
+	gfxpsd->BlendState.AlphaToCoverageEnable = FALSE;
+	gfxpsd->BlendState.IndependentBlendEnable = FALSE;
+	gfxpsd->BlendState.RenderTarget[0].BlendEnable = FALSE;
+	gfxpsd->BlendState.RenderTarget[0].LogicOpEnable = FALSE;
+	gfxpsd->BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+	gfxpsd->BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+	gfxpsd->BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	gfxpsd->BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ZERO;
+	gfxpsd->BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	gfxpsd->BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	gfxpsd->BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+	gfxpsd->BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	gfxpsd->DepthStencilState.DepthEnable = FALSE;
+	gfxpsd->DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	gfxpsd->DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	gfxpsd->DepthStencilState.StencilEnable = FALSE;
+	gfxpsd->DepthStencilState.StencilReadMask = 0;
+	gfxpsd->DepthStencilState.StencilWriteMask = 0;
+	gfxpsd->DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	gfxpsd->DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	gfxpsd->DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+
+	gfxpsd->SampleMask = 0xFFFFFFFF;
+	gfxpsd->SampleDesc.Count = 1;
+	gfxpsd->SampleDesc.Quality = 0;
+
 	gfxpsd->NodeMask = 0;
+
 	gfxpsd->CachedPSO.CachedBlobSizeInBytes = 0;
 	gfxpsd->CachedPSO.pCachedBlob = nullptr;
+
 	gfxpsd->Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
-	// TODO: Output Merger
 }
