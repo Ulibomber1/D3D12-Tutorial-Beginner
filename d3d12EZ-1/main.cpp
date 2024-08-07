@@ -11,7 +11,7 @@
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
 void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
 void initResourceDesc(D3D12_RESOURCE_DESC*);
-void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID3D12RootSignature> rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
+void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
 
 int main()
 {
@@ -109,6 +109,20 @@ int main()
 			// == Input Assembler ==
 			cmdList->IASetVertexBuffers(0, 1, &vbv);
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			// == Rasterizer ==
+			D3D12_VIEWPORT vp;
+			vp.TopLeftX = vp.TopLeftY = 0;
+			vp.Width = DXWindow::Get().GetWidth();
+			vp.Height = DXWindow::Get().GetHeight();
+			vp.MinDepth = 1.f;
+			vp.MaxDepth = 0.f;
+			cmdList->RSSetViewports(1, &vp);
+			RECT scRect;
+			scRect.left = scRect.top = 0;
+			scRect.right = DXWindow::Get().GetWidth();
+			scRect.bottom = DXWindow::Get().GetHeight();
+			cmdList->RSSetScissorRects(1, &scRect);
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
@@ -166,7 +180,7 @@ void initResourceDesc(D3D12_RESOURCE_DESC* rscDesc)
 	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 }
 
-void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ComPointer<ID3D12RootSignature> rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader)
+void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader)
 {
 	gfxpsd->pRootSignature = rootSig; // give pointer to a root signature (created by DXContext)
 
