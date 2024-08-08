@@ -225,7 +225,7 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
     cmdlist->ResourceBarrier(1, &barr);
 
     // Clear the RTV
-    float clearColor[] = { .6f, .6f, .9f, 1.0f };
+    float clearColor[] = { .4f, .4f, .9f, 1.0f };
     cmdlist->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], clearColor, 0, nullptr);
     // Set CPU descriptor handles for the RTVs
     cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, nullptr);

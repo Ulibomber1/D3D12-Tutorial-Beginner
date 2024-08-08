@@ -13,6 +13,8 @@ void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
 void initResourceDesc(D3D12_RESOURCE_DESC*);
 void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
 
+void pukeColor(float* color);
+
 int main()
 {
 	DXDebugLayer::Get().Init();
@@ -84,7 +86,6 @@ int main()
 		vbv.SizeInBytes = sizeof(vertices) * _countof(vertices);
 		vbv.StrideInBytes = sizeof(Vertex);
 
-
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
@@ -102,7 +103,7 @@ int main()
 
 			DXWindow::Get().BeginFrame(cmdList);
 			
-			// == PSO ==
+			// == Pipeline State Object ==
 			cmdList->SetPipelineState(pso);
 			cmdList->SetGraphicsRootSignature(rootSignature);
 
@@ -123,6 +124,11 @@ int main()
 			scRect.right = DXWindow::Get().GetWidth();
 			scRect.bottom = DXWindow::Get().GetHeight();
 			cmdList->RSSetScissorRects(1, &scRect);
+
+			// == Root Sig ==
+			static float color[] = { 0.0f, 0.0f, 1.0f };
+			pukeColor(color);
+			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
@@ -225,14 +231,14 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 
 	gfxpsd->BlendState.AlphaToCoverageEnable = FALSE;
 	gfxpsd->BlendState.IndependentBlendEnable = FALSE;
-	gfxpsd->BlendState.RenderTarget[0].BlendEnable = FALSE;
-	gfxpsd->BlendState.RenderTarget[0].LogicOpEnable = FALSE;
-	gfxpsd->BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+	gfxpsd->BlendState.RenderTarget[0].BlendEnable = TRUE;
+	gfxpsd->BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
 	gfxpsd->BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
 	gfxpsd->BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 	gfxpsd->BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ZERO;
 	gfxpsd->BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 	gfxpsd->BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	gfxpsd->BlendState.RenderTarget[0].LogicOpEnable = FALSE;
 	gfxpsd->BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	gfxpsd->BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
@@ -261,4 +267,23 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 	gfxpsd->CachedPSO.pCachedBlob = nullptr;
 
 	gfxpsd->Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
+}
+
+void pukeColor(float* color)
+{
+	static int pukeState = 0;
+	color[pukeState] += 0.01f;
+	if (pukeState != 0) color[pukeState - 1] -= 0.01f;
+	else color[2] -= 0.01f;
+	if (color[pukeState] > 1.0f)
+	{
+		pukeState++;
+		if (pukeState == 3)
+		{
+			color[0] = 0.0f;
+			color[1] = 0.0f;
+			color[2] = 1.0f;
+			pukeState = 0;
+		}
+	}
 }
