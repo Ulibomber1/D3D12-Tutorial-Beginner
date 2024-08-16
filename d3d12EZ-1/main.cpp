@@ -14,7 +14,7 @@ void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
 void initResourceDesc(D3D12_RESOURCE_DESC*);
 void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
 
-void pukeColor(float* color, float delta);
+void uncrnVomit(float* color, float delta);
 
 int main()
 {
@@ -128,7 +128,7 @@ int main()
 
 			// == Root Sig ==
 			static float color[] = { 0.0f, 0.0f, 1.0f };
-			pukeColor(color, 0.0025f);
+			uncrnVomit(color, 0.0025f);
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 			
 			// Draw
@@ -270,7 +270,7 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 	gfxpsd->Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
 }
 
-void pukeColor(float* color, float delta)
+void uncrnVomit(float* color, float delta)
 {
 	static int pukeState = 0;
 	static float temp;
