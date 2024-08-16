@@ -12,10 +12,11 @@
 
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
 void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
-void initResourceDesc(D3D12_RESOURCE_DESC*);
+void initRsrcDescUpload(D3D12_RESOURCE_DESC*, uint32_t);
+void initRsrcDescVertex(D3D12_RESOURCE_DESC*);
 void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader);
-
 void uncrnVomit(float* color, float delta);
+void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData);
 
 int main()
 {
@@ -44,30 +45,64 @@ int main()
 			{"Position", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
-		// == Upload & Vertex Buffer Description ==
-		D3D12_RESOURCE_DESC rd{};
-		initResourceDesc(&rd);
-
-		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
-		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
-
-		// copy void* --> CPU resource
-		void* uploadBufferAddress;
-		D3D12_RANGE uploadRange;
-		uploadRange.Begin = 0;
-		uploadRange.End = 1023;
-		uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
-		memcpy(uploadBufferAddress, vertices, sizeof(vertices));
-		uploadBuffer->Unmap(0, &uploadRange);
-
-		// == texture ==
+		// == Texture Data ==
 		ImageLoader::ImageData textureData;
 		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData);
+		uint32_t textureStride = textureData.width * ((textureData.bpp + 7) / 8);
+		uint32_t textureSize = textureData.height * textureStride;
+
+		// == Upload & Vertex Buffer Description ==
+		D3D12_RESOURCE_DESC rdu{};
+		initRsrcDescUpload(&rdu, textureSize);
+
+		D3D12_RESOURCE_DESC rdv{};
+		initRsrcDescVertex(&rdv);
+
+		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
+		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
+
+		// == Texture Description ==
+		D3D12_RESOURCE_DESC rdt{};
+		initResourceDescTexture(&rdt, &textureData);
+
+		ComPointer<ID3D12Resource2> texture;
+		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
+
+		// copy void* --> CPU resource
+		char* uploadBufferAddress;
+		D3D12_RANGE uploadRange;
+		uploadRange.Begin = 0;
+		uploadRange.End = 1024 + textureSize;
+		uploadBuffer->Map(0, &uploadRange, (void**)& uploadBufferAddress);
+		memcpy(&uploadBufferAddress[0], textureData.data.data(), textureSize);
+		memcpy(&uploadBufferAddress[textureSize], vertices, sizeof(vertices));
+		uploadBuffer->Unmap(0, &uploadRange);
 
 		// copy CPU resource --> GPU resource
 		auto* cmdList = DXContext::Get().InitCommandList();
-		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, 1024);
+		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, textureSize, 1024);
+
+		D3D12_BOX textureSizeAsBox;
+		textureSizeAsBox.left = textureSizeAsBox.top = textureSizeAsBox.front = 0;
+		textureSizeAsBox.right = textureData.width;
+		textureSizeAsBox.bottom = textureData.height;
+		textureSizeAsBox.back = 1;
+
+		D3D12_TEXTURE_COPY_LOCATION txtcSrc, txtcDst;
+		txtcSrc.pResource = uploadBuffer;
+		txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		txtcSrc.PlacedFootprint.Offset = 0;
+		txtcSrc.PlacedFootprint.Footprint.Width = textureData.width;
+		txtcSrc.PlacedFootprint.Footprint.Height = textureData.height;
+		txtcSrc.PlacedFootprint.Footprint.Depth = 1;
+		txtcSrc.PlacedFootprint.Footprint.RowPitch = textureStride;
+		txtcSrc.PlacedFootprint.Footprint.Format = textureData.giPixelFormat;
+		txtcDst.pResource = texture;
+		txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		txtcDst.PlacedFootprint.Offset = 0;
+
+		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 		DXContext::Get().ExecuteCommandList();
 
 		// == Shaders ==
@@ -177,7 +212,22 @@ void initHeapPropsDefault(D3D12_HEAP_PROPERTIES* heapProps)
 	heapProps->VisibleNodeMask = 0; // Where the memory can be seen from.
 }
 
-void initResourceDesc(D3D12_RESOURCE_DESC* rscDesc)
+void initRsrcDescUpload(D3D12_RESOURCE_DESC* rscDesc, uint32_t imgSize)
+{
+	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
+	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
+	rscDesc->Width = 1024 + imgSize; // width of the buffer. 1024 is an arbitrary bit width
+	rscDesc->Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
+	rscDesc->DepthOrArraySize = 1; // same as previous comment
+	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
+	rscDesc->Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
+	rscDesc->SampleDesc.Count = 1; // the amount of samples
+	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
+	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
+	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
+}
+
+void initRsrcDescVertex(D3D12_RESOURCE_DESC* rscDesc)
 {
 	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
 	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
@@ -309,4 +359,19 @@ void uncrnVomit(float* color, float delta)
 			pukeState = 0;
 		}
 	}
+}
+
+void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData)
+{
+	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // how many dimensions this resource has
+	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
+	rscDesc->Width = txtrData->width; // width of the buffer. 1024 is an arbitrary bit width
+	rscDesc->Height = txtrData->height; // if this were a higher dimension resource, this would likely be larger than 1
+	rscDesc->DepthOrArraySize = 1; // same as previous comment
+	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
+	rscDesc->Format = txtrData->giPixelFormat; // Specifies what type of byte format to use
+	rscDesc->SampleDesc.Count = 1; // the amount of samples
+	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
+	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
+	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 }
