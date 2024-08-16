@@ -3,6 +3,7 @@
 
 #include <WinSupport/WinInclude.h>
 #include <WinSupport/ComPointer.h>
+#include <DXSupport/ImageLoader.h>
 #include <DXSupport/DXWindow.h>
 #include <DXSupport/Shader.h>
 #include <DXDebug/DXDebugLayer.h>
@@ -59,6 +60,10 @@ int main()
 		uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
 		memcpy(uploadBufferAddress, vertices, sizeof(vertices));
 		uploadBuffer->Unmap(0, &uploadRange);
+
+		// == texture ==
+		ImageLoader::ImageData textureData;
+		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData);
 
 		// copy CPU resource --> GPU resource
 		auto* cmdList = DXContext::Get().InitCommandList();
