@@ -194,9 +194,27 @@ int main()
 			static float color[] = { 0.0f, 0.0f, 1.0f };
 			uncrnVomit(color, 0.0025f);
 
+			static float angle = 0.0f;
+			angle += 0.005f;
+			struct ARCorrection
+			{
+				float aspectRatio;
+				float zoom;
+				float sinAngle;
+				float cosAngle;
+			};
+			ARCorrection correction
+			{
+				.aspectRatio = ((float)DXWindow::Get().GetHeight()) / ((float)DXWindow::Get().GetWidth()),
+				.zoom = 0.8f,
+				.sinAngle = sinf(angle),
+				.cosAngle = cosf(angle),
+			};
+
 			// == Root Sig ==
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
-			cmdList->SetGraphicsRootDescriptorTable(1, srvHeap->GetGPUDescriptorHandleForHeapStart());
+			cmdList->SetGraphicsRoot32BitConstants(1, 4, &correction, 0);
+			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);

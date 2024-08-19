@@ -1,7 +1,8 @@
 /*
  *  Root Signature Layout (CPU)
     - 0: float3 "Color"
-    - 1: descriptor table "textures"
+    - 1: ARCorrection "aspect ratio correction"
+    - 2: descriptor table "textures"
  *  
 
     Root Signature Layout (GPU)
@@ -12,7 +13,8 @@
 
 #define ROOTSIG \
 "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT)," \
-"RootConstants(num32BitConstants=3, b0)," \
+"RootConstants(num32BitConstants=4, b0)," \
+"RootConstants(num32BitConstants=4, b1)," \
 "DescriptorTable(" \
     "SRV(t0, numDescriptors = unbounded)" \
 ")," \

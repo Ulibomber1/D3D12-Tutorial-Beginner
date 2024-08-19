@@ -185,6 +185,9 @@
   <ItemGroup>
     <Image Include="app\auge_512_512_BGRA_32BPP.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Pipeline.hlsli" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
