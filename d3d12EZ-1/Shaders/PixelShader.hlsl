@@ -6,8 +6,14 @@ sampler textureSampler : register(s0);
 
 [RootSignature(ROOTSIG)]
 // takes an RGBA or other 4-float value and writes it to a render target
-float4 main() : SV_Target
+void main(
+    // == IN ==
+    in float2 uv : Texcoord,
+
+    // == OUT ==
+    out float4 pixel : SV_Target
+) 
 {
-    float4 texel = textures[0].Sample(textureSampler, float2(0.5f, 0.5f));
-    return float4(texel.rgb, 1.0f);
+    float4 texel = textures[0].Sample(textureSampler, uv);
+    pixel = float4(texel.rgb, 1.0f);
 }

@@ -62,4 +62,9 @@
     <FxCompile Include="Shaders\PixelShader.hlsl" />
     <FxCompile Include="Shaders\RootSignature.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="app\auge_512_512_BGRA_32BPP.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
