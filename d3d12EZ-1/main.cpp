@@ -37,9 +37,9 @@ int main()
 		};
 		Vertex vertices[] =
 		{
-			{ -1.f, -1.f, 0.0f, 0.8f},
-			{  0.f,  1.f, 0.5f, 0.2f},
-			{  1.f, -1.f, 1.0f, 0.8f},
+			{ -1.0f, -1.0f, 0.0f, 1.0f},
+			{  0.0f,  1.0f, 0.5f, 0.0f},
+			{  1.0f, -1.0f, 1.0f, 1.0f},
 		};
 		D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
 		{
