@@ -70,7 +70,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount];
 
 
-// Singleton
+// Singleton (because *typically* you don't want multiple windows)
 public:
 	DXWindow(const DXWindow&) = delete;
 	DXWindow& operator=(const DXWindow&) = delete;

@@ -91,7 +91,7 @@ bool DXWindow::Init()
         return false;
     }
 
-    // Create Handles to View
+    // Create Handles to Render Target View
     auto firstHandle = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart(); // the very first handle in the heap
     auto handleIncrement = DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV); // the handle heap increment amount
     for (size_t i = 0; i < FrameCount; ++i)
@@ -110,21 +110,24 @@ bool DXWindow::Init()
     return true;
 }
 
+// polls the window so that it can respond to window messages, passes the message along to the window's message callback function
 void DXWindow::Update()
 {
     MSG msg;
     while (PeekMessageW(&msg, m_window, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&msg); // Translate the message (weird MS data structure stuff makes this necessary)
-        DispatchMessageW(&msg); 
+        DispatchMessageW(&msg); // dispatches window message to the window's callback function
     }
 }
 
+// presents the current buffer, only whilst the buffer is in present state
 void DXWindow::Present()
 {
     m_swapChain->Present(1, 0);
 }
 
+// clean shutdown of the DX components of the window and the window itself
 void DXWindow::Shutdown()
 {
     ReleaseBuffers();
@@ -201,6 +204,7 @@ void DXWindow::SetFullscreen(bool enabled)
     m_isFullscreen = enabled;
 }
 
+// Sets the state of the resource barrier for the RTV to Render Target, clears it, then sets the CPU descriptor handle for the RTV
 void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
 {
     // Get the currently used buffer's index
@@ -225,12 +229,13 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
     cmdlist->ResourceBarrier(1, &barr);
 
     // Clear the RTV
-    float clearColor[] = { .4f, .4f, .9f, 1.0f };
+    float clearColor[] = { .4f, .4f, .9f, 1.0f }; 
     cmdlist->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], clearColor, 0, nullptr);
     // Set CPU descriptor handles for the RTVs
     cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, nullptr);
 }
 
+// Sets the state of the resource barrier for the RTV to Present (no changes allowed whilst in this state)
 void DXWindow::EndFrame(ID3D12GraphicsCommandList6* cmdlist)
 {
     D3D12_RESOURCE_BARRIER barr;
@@ -244,6 +249,7 @@ void DXWindow::EndFrame(ID3D12GraphicsCommandList6* cmdlist)
     cmdlist->ResourceBarrier(1, &barr);
 }
 
+// gets the current buffer and creates an RTV for it
 bool DXWindow::GetBuffers()
 {
     for (size_t i = 0; i < FrameCount; ++i)
@@ -266,6 +272,7 @@ bool DXWindow::GetBuffers()
     return true;
 }
 
+// called when the old buffers are getting discarded for ones with a new size
 void DXWindow::ReleaseBuffers()
 {
     for (size_t i = 0; i < FrameCount; ++i)
@@ -274,6 +281,11 @@ void DXWindow::ReleaseBuffers()
     }
 }
 
+/* TODO: 
+-Flag for click handling
+--we might need this for Dear ImGui
+*/
+// handles the processes for different window messages
 LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)

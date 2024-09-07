@@ -53,6 +53,11 @@ bool DXContext::Init()
 	return true;
 }
 
+/* TODO:
+-once command list count is more than one, release all command lists
+-
+*/
+/* Clean shutdown of the DX components */
 void DXContext::Shutdown()
 {
 	m_cmdList.Release();
@@ -66,7 +71,14 @@ void DXContext::Shutdown()
 	m_device.Release();
 }
 
-// Sets a synchronization fence and waits for all workloads behind the fence to finish (kind of like a moving goal post); exit() use should be refactored
+/* TODO:
+-actually use the async computation that DX12 provides
+--need to research DX12 async conventions and architecture
+--setup a robust architecture for async based on research
+--use the new async functionality
+-refactor use of exit() function
+*/
+// Sets a synchronization fence and waits for all workloads behind the fence to finish (kind of like a moving goal post)
 void DXContext::SignalAndWait()
 {
 	m_cmdQueue->Signal(m_fence, ++m_fenceValue);
@@ -83,6 +95,7 @@ void DXContext::SignalAndWait()
 	}
 }
 
+// Resets the command allocator and command lists
 ID3D12GraphicsCommandList6* DXContext::InitCommandList()
 {
 	m_cmdAllocator->Reset();
@@ -90,6 +103,11 @@ ID3D12GraphicsCommandList6* DXContext::InitCommandList()
 	return m_cmdList;
 }
 
+/* TODO:
+-add more command lists when tasks get computationally expensive and can be done in parallel
+-
+*/
+// Closes the command list, puts it into list of command lists, puts the lists into a command queue, and finally call SignalAndWait()
 void DXContext::ExecuteCommandList()
 {
 	if (SUCCEEDED(m_cmdList->Close()))
