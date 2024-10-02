@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClCompile Include="DXSupport\DXContext.cpp" />
     <ClCompile Include="DXDebug\DXDebugLayer.cpp" />
+    <ClCompile Include="DXSupport\dxDescriptorFactory.h" />
     <ClCompile Include="DXSupport\DXWindow.cpp" />
     <ClCompile Include="DXSupport\ImageLoader.cpp" />
     <ClCompile Include="DXSupport\Shader.cpp" />
