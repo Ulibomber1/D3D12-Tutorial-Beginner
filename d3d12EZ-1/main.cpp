@@ -349,10 +349,10 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 	gfxpsd->DepthStencilState.StencilEnable = FALSE;
 	gfxpsd->DepthStencilState.StencilReadMask = 0;
 	gfxpsd->DepthStencilState.StencilWriteMask = 0;
-	gfxpsd->DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	gfxpsd->DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	gfxpsd->DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
-	gfxpsd->DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	gfxpsd->DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	gfxpsd->DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
 	gfxpsd->DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	gfxpsd->DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	gfxpsd->DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
@@ -363,10 +363,8 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 	gfxpsd->SampleDesc.Quality = 0;
 
 	gfxpsd->NodeMask = 0;
-
 	gfxpsd->CachedPSO.CachedBlobSizeInBytes = 0;
 	gfxpsd->CachedPSO.pCachedBlob = nullptr;
-
 	gfxpsd->Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
 }
 

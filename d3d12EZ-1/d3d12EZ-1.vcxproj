@@ -141,11 +141,13 @@
     <ClCompile Include="DXDebug\DXDebugLayer.cpp" />
     <ClCompile Include="DXSupport\dxDescriptorFactory.h" />
     <ClCompile Include="DXSupport\DXWindow.cpp" />
+    <ClCompile Include="DXSupport\GPSODescBuilder.cpp" />
     <ClCompile Include="DXSupport\ImageLoader.cpp" />
     <ClCompile Include="DXSupport\Shader.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DXSupport\GPSODescBuilder.h" />
     <ClInclude Include="DXSupport\ImageLoader.h" />
     <ClInclude Include="DXSupport\Shader.h" />
     <ClInclude Include="WinSupport\ComPointer.h" />

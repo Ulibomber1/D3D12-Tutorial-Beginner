@@ -4,6 +4,8 @@
 
 #include <WinSupport/WinInclude.h>
 
+
+
 // Abstract Product Class
 class Descriptor 
 {
@@ -24,11 +26,6 @@ public:
 	D3D12_RESOURCE_DESC desc;
 };
 
-class PipeLineDesc : public Descriptor 
-{
-public:
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
-};
 
 class InptElmtDesc : public Descriptor 
 {
@@ -41,6 +38,7 @@ public:
 class DescriptorFactory 
 {
 public:
+	virtual Descriptor* createDesc() = 0;
 	virtual Descriptor* createDesc(int type) = 0;
 	virtual ~DescriptorFactory() {}
 };
@@ -73,14 +71,5 @@ public:
 	Descriptor* createDesc(int type) override
 	{
 		return new RescDesc();
-	}
-};
-
-class PipeLineDescFactory : public DescriptorFactory
-{
-public:
-	Descriptor* createDesc(int type) override
-	{
-		return new PipeLineDesc();
 	}
 };
