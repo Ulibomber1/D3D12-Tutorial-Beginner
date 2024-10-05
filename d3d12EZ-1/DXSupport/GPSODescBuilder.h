@@ -6,7 +6,7 @@
 class GPSODesc
 {
 public:
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
 };
 
 // Builder Interface
@@ -15,10 +15,10 @@ class GPSODescBuilder
 	GPSODescBuilder(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 protected:
 	GPSODesc descClass;
-	ID3D12RootSignature* pRootSig;
-	D3D12_INPUT_ELEMENT_DESC* pVertLayout;
-	UINT _vertLayoutSize;
-	Shader* pVertShader, pPixShader, pDomShader, pHullShader, pGeomShader;
+	ID3D12RootSignature* pRootSig = nullptr;
+	D3D12_INPUT_ELEMENT_DESC* pVertLayout = nullptr;
+	UINT _vertLayoutSize = 0;
+	Shader *pVertShader=nullptr, * pPixShader=nullptr, * pDomShader=nullptr, * pHullShader=nullptr, * pGeomShader=nullptr;
 
 public:
 	virtual void buildRootSig(ID3D12RootSignature* rootSig) = 0;
@@ -35,6 +35,8 @@ public:
 	virtual void buildPSODetails() = 0;
 
 	virtual D3D12_GRAPHICS_PIPELINE_STATE_DESC getDescriptor() = 0;
+
+	friend class GPSODescDirector;
 };
 
 class GPSODescBuilder2D : public GPSODescBuilder 
