@@ -12,7 +12,8 @@ public:
 // Builder Interface
 class GPSODescBuilder
 {
-	GPSODescBuilder(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
+public:
+	GPSODescBuilder();
 protected:
 	GPSODesc descClass;
 	ID3D12RootSignature* pRootSig = nullptr;
@@ -42,6 +43,8 @@ public:
 class GPSODescBuilder2D : public GPSODescBuilder 
 {
 public:
+	GPSODescBuilder2D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
+public:
 	void buildRootSig(ID3D12RootSignature* rootSig) override;
 	void buildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
 	void buildIndexBuffer() override;
@@ -58,8 +61,9 @@ public:
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC getDescriptor() override;
 };
 
-class GPSODescBuilder3D : public GPSODescBuilder
+/*class GPSODescBuilder3D : public GPSODescBuilder
 {
+	GPSODescBuilder3D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 public:
 	void buildRootSig(ID3D12RootSignature* rootSig) override;
 	void buildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
@@ -73,7 +77,7 @@ public:
 	void buildDepthStencil() override;
 	void buildSample() override;
 	void buildPSODetails() override;
-};
+};*/
 
 class GPSODescDirector
 {

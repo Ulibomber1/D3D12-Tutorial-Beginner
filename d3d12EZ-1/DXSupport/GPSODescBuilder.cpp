@@ -1,7 +1,10 @@
 #include "GPSODescBuilder.h"
 
 // === Builder Constructor ===
-GPSODescBuilder::GPSODescBuilder(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs)
+GPSODescBuilder::GPSODescBuilder(){}
+
+// === 2D PL Description Builder ===
+GPSODescBuilder2D::GPSODescBuilder2D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs)
 {
 	descClass = GPSODesc();
 	pRootSig = rs;
@@ -13,8 +16,6 @@ GPSODescBuilder::GPSODescBuilder(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DE
 	pHullShader = hs;
 	pGeomShader = gs;
 }
-
-// === 2D PL Description Builder ===
 void GPSODescBuilder2D::buildRootSig(ID3D12RootSignature* rootSig)
 {
 	descClass.desc.pRootSignature = rootSig;
@@ -121,17 +122,16 @@ void GPSODescBuilder2D::buildPSODetails()
 	descClass.desc.CachedPSO.pCachedBlob = nullptr;
 	descClass.desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE; // start with the none flag
 }
-
 D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSODescBuilder2D::getDescriptor()
 {
 	return descClass.desc;
 }
 
 // === 3D PL Description Builder ===
-void GPSODescBuilder3D::buildRootSig(ID3D12RootSignature* rootSig)
+/*void GPSODescBuilder3D::buildRootSig(ID3D12RootSignature* rootSig)
 {
 	descClass.desc.pRootSignature = rootSig;
-}
+}*/
 
 // === PL Description Builder ===
 void GPSODescDirector::construct(GPSODescBuilder& builder)

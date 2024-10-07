@@ -6,6 +6,8 @@
 #include <DXSupport/ImageLoader.h>
 #include <DXSupport/DXWindow.h>
 #include <DXSupport/Shader.h>
+#include <DXSupport/GPSODescBuilder.h>
+
 #include <DXDebug/DXDebugLayer.h>
 
 #include <DXSupport/DXContext.h>
@@ -138,8 +140,11 @@ int main()
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSignatureShader.GetBuffer(), rootSignatureShader.GetSize(), IID_PPV_ARGS(&rootSignature));
 
 		// == Pipeline State Description ==
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
-		initPipelineState(&gfxPsod, rootSignature, vertexLayout, _countof(vertexLayout), &vertexShader, &pixelShader); // we pass vertexLayout array since it will decay to a pointer anyways
+		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout, (UINT)_countof(vertexLayout), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr);
+		GPSODescDirector PSOdirector;
+		PSOdirector.construct(PSObuilder);
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.getDescriptor();
+		//initPipelineState(&gfxPsod, rootSignature, vertexLayout, _countof(vertexLayout), &vertexShader, &pixelShader); // we pass vertexLayout array since it will decay to a pointer anyways
 
 		ComPointer<ID3D12PipelineState> pso;
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
@@ -214,7 +219,7 @@ int main()
 			// == Root Sig ==
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 			cmdList->SetGraphicsRoot32BitConstants(1, 4, &correction, 0);
-			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
+			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart()); // error starts here
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
