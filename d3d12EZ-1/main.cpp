@@ -292,6 +292,7 @@ void initRsrcDescVertex(D3D12_RESOURCE_DESC* rscDesc)
 	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 }
 
+// === Deprecated Function, will delete after letting current solution be tested for a while ===
 void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSignature* rootSig, D3D12_INPUT_ELEMENT_DESC* verLayout, unsigned long long verLayoutSize, Shader* verShader, Shader* pixShader)
 {
 	gfxpsd->pRootSignature = rootSig; // give pointer to a root signature (created by DXContext)
