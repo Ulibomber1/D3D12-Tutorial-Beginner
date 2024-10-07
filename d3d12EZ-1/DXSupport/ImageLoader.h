@@ -15,14 +15,14 @@ class ImageLoader
 public:
 	struct ImageData
 	{
-		std::vector<char> data;
-		uint32_t width;
-		uint32_t height;
-		uint32_t bpp; // bits per pixel
-		uint32_t cc; // channel count
+		std::vector<char> data = {};
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t bpp = 0; // bits per pixel
+		uint32_t cc = 0; // channel count
 
-		GUID wicpixelFormat;
-		DXGI_FORMAT giPixelFormat;
+		GUID wicpixelFormat = {};
+		DXGI_FORMAT giPixelFormat = {};
 	};
 
 	static bool LoadImageFromDisk(const std::filesystem::path& imagePath, ImageData& data);
