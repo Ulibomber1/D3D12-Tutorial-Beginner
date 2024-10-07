@@ -16,7 +16,7 @@
 "RootConstants(num32BitConstants=4, b0)," \
 "RootConstants(num32BitConstants=4, b1)," \
 "DescriptorTable(" \
-    "SRV(t0, numDescriptors = unbounded)" \
+    "SRV(t0, numDescriptors = 1)" \
 ")," \
 "StaticSampler(s0)" 
 

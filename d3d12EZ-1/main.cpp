@@ -26,6 +26,13 @@ struct Vertex
 	float u, v;
 };
 struct ARCorrection
+{
+	float aspectRatio;
+	float zoom;
+	float sinAngle;
+	float cosAngle;
+};
+
 // D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 
 int main()
@@ -52,13 +59,13 @@ int main()
 			{"Texcoord", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float) * 2, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
-		// == Texture Data ==
+		// === Texture Data ===
 		ImageLoader::ImageData textureData;
 		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData);
 		uint32_t textureStride = textureData.width * ((textureData.bpp + 7) / 8);
 		uint32_t textureSize = textureData.height * textureStride;
 
-		// == Upload & Vertex Buffer Description ==
+		// === Upload & Vertex Buffer Description ===
 		D3D12_RESOURCE_DESC rdu{};
 		initRsrcDescUpload(&rdu, textureSize);
 
@@ -69,14 +76,14 @@ int main()
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
 
-		// == Texture Description ==
+		// === Texture Description ===
 		D3D12_RESOURCE_DESC rdt{};
 		initResourceDescTexture(&rdt, &textureData);
 
 		ComPointer<ID3D12Resource2> texture;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
 
-		// == Descriptor Heap for Textures ==
+		// === Descriptor Heap for Textures ===
 		D3D12_DESCRIPTOR_HEAP_DESC dhd{};
 		dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		dhd.NumDescriptors = 1;
@@ -86,7 +93,7 @@ int main()
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&srvHeap));
 
-		// == SRV ==
+		// === SRV ===
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
 		srv.Format = textureData.giPixelFormat;
 		srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -133,17 +140,17 @@ int main()
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 		DXContext::Get().ExecuteCommandList();
 
-		// == Shaders ==
+		// === Shaders ===
 		Shader rootSignatureShader("RootSignature.cso");
 		Shader vertexShader("VertexShader.cso");
 		Shader pixelShader("PixelShader.cso");
 
-		// == Create Root Sig ==
+		// === Create Root Sig ===
 		ComPointer<ID3D12RootSignature> rootSignature;
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSignatureShader.GetBuffer(), rootSignatureShader.GetSize(), IID_PPV_ARGS(&rootSignature));
 
-		// == Pipeline State Description ==
-		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout, (UINT)_countof(vertexLayout), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr);
+		// === Pipeline State Description ===
+		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout, (UINT)_countof(vertexLayout), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
 		GPSODescDirector PSOdirector;
 		PSOdirector.construct(PSObuilder);
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.getDescriptor();
@@ -151,7 +158,7 @@ int main()
 		ComPointer<ID3D12PipelineState> pso;
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
 
-		// == Vertex Buffer View ==
+		// === Vertex Buffer View ===
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
 		vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
 		vbv.SizeInBytes = sizeof(vertices) * _countof(vertices);
