@@ -20,6 +20,14 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 void uncrnVomit(float* color, float delta);
 void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData);
 
+struct Vertex
+{
+	float x, y;
+	float u, v;
+};
+struct ARCorrection
+// D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+
 int main()
 {
 	DXDebugLayer::Get().Init();
@@ -31,12 +39,7 @@ int main()
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
 
-		// == Vertex Data == 
-		struct Vertex
-		{
-			float x, y;
-			float u, v;
-		};
+		// === Vertex Data ===
 		Vertex vertices[] =
 		{
 			{ -1.0f, -1.0f, 0.0f, 1.0f},
@@ -76,7 +79,7 @@ int main()
 		// == Descriptor Heap for Textures ==
 		D3D12_DESCRIPTOR_HEAP_DESC dhd{};
 		dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		dhd.NumDescriptors = 8;
+		dhd.NumDescriptors = 1;
 		dhd.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		dhd.NodeMask = 0;
 
@@ -144,7 +147,6 @@ int main()
 		GPSODescDirector PSOdirector;
 		PSOdirector.construct(PSObuilder);
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.getDescriptor();
-		//initPipelineState(&gfxPsod, rootSignature, vertexLayout, _countof(vertexLayout), &vertexShader, &pixelShader); // we pass vertexLayout array since it will decay to a pointer anyways
 
 		ComPointer<ID3D12PipelineState> pso;
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
@@ -201,13 +203,6 @@ int main()
 
 			static float angle = 0.0f;
 			angle += 0.005f;
-			struct ARCorrection
-			{
-				float aspectRatio;
-				float zoom;
-				float sinAngle;
-				float cosAngle;
-			};
 			ARCorrection correction
 			{
 				.aspectRatio = ((float)DXWindow::Get().GetHeight()) / ((float)DXWindow::Get().GetWidth()),
