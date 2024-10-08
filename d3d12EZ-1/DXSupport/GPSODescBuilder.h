@@ -22,20 +22,20 @@ protected:
 	Shader *pVertShader=nullptr, * pPixShader=nullptr, * pDomShader=nullptr, * pHullShader=nullptr, * pGeomShader=nullptr;
 
 public:
-	virtual void buildRootSig(ID3D12RootSignature* rootSig) = 0;
-	virtual void buildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) = 0;
-	virtual void buildIndexBuffer() = 0;
-	virtual void buildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) = 0;
-	virtual void buildRasterizer() = 0;
-	virtual void buildStreamOutput() = 0;
-	virtual void buildRTV() = 0;
-	virtual void buildDSV() = 0;
-	virtual void buildBlendState() = 0;
-	virtual void buildDepthStencil() = 0;
-	virtual void buildSample() = 0;
-	virtual void buildPSODetails() = 0;
+	virtual void BuildRootSig(ID3D12RootSignature* rootSig) = 0;
+	virtual void BuildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) = 0;
+	virtual void BuildIndexBuffer() = 0;
+	virtual void BuildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) = 0;
+	virtual void BuildRasterizer() = 0;
+	virtual void BuildStreamOutput() = 0;
+	virtual void BuildRTV() = 0;
+	virtual void BuildDSV() = 0;
+	virtual void BuildBlendState() = 0;
+	virtual void BuildDepthStencil() = 0;
+	virtual void BuildSample() = 0;
+	virtual void BuildPSODetails() = 0;
 
-	virtual D3D12_GRAPHICS_PIPELINE_STATE_DESC getDescriptor() = 0;
+	virtual D3D12_GRAPHICS_PIPELINE_STATE_DESC GetDescriptor() = 0;
 
 	friend class GPSODescDirector;
 };
@@ -45,42 +45,42 @@ class GPSODescBuilder2D : public GPSODescBuilder
 public:
 	GPSODescBuilder2D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 public:
-	void buildRootSig(ID3D12RootSignature* rootSig) override;
-	void buildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
-	void buildIndexBuffer() override;
-	void buildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) override;
-	void buildRasterizer() override;
-	void buildStreamOutput() override;
-	void buildRTV() override;
-	void buildDSV() override;
-	void buildBlendState() override;
-	void buildDepthStencil() override;
-	void buildSample() override;
-	void buildPSODetails() override;
+	void BuildRootSig(ID3D12RootSignature* rootSig) override;
+	void BuildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
+	void BuildIndexBuffer() override;
+	void BuildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) override;
+	void BuildRasterizer() override;
+	void BuildStreamOutput() override;
+	void BuildRTV() override;
+	void BuildDSV() override;
+	void BuildBlendState() override;
+	void BuildDepthStencil() override;
+	void BuildSample() override;
+	void BuildPSODetails() override;
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC getDescriptor() override;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC GetDescriptor() override;
 };
 
 /*class GPSODescBuilder3D : public GPSODescBuilder
 {
 	GPSODescBuilder3D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 public:
-	void buildRootSig(ID3D12RootSignature* rootSig) override;
-	void buildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
-	void buildIndexBuffer() override;
-	void buildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) override;
-	void buildRasterizer() override;
-	void buildStreamOutput() override;
-	void buildRTV() override;
-	void buildDSV() override;
-	void buildBlendState() override;
-	void buildDepthStencil() override;
-	void buildSample() override;
-	void buildPSODetails() override;
+	void BuildRootSig(ID3D12RootSignature* rootSig) override;
+	void BuildInputLayout(D3D12_INPUT_ELEMENT_DESC* vertLayout, UINT vertLayoutSize) override;
+	void BuildIndexBuffer() override;
+	void BuildShaders(Shader* vertShader, Shader* pixShader, Shader* domShader, Shader* hullShader, Shader* geomShader) override;
+	void BuildRasterizer() override;
+	void BuildStreamOutput() override;
+	void BuildRTV() override;
+	void BuildDSV() override;
+	void BuildBlendState() override;
+	void BuildDepthStencil() override;
+	void BuildSample() override;
+	void BuildPSODetails() override;
 };*/
 
 class GPSODescDirector
 {
 public:
-	void construct(GPSODescBuilder& builder);
+	void Construct(GPSODescBuilder& builder);
 };

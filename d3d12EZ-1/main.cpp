@@ -42,7 +42,6 @@ int main()
 	{
 		D3D12_HEAP_PROPERTIES hpUpload{};
 		initHeapPropsUpload(&hpUpload);
-
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
 
@@ -68,10 +67,8 @@ int main()
 		// === Upload & Vertex Buffer Description ===
 		D3D12_RESOURCE_DESC rdu{};
 		initRsrcDescUpload(&rdu, textureSize);
-
 		D3D12_RESOURCE_DESC rdv{};
 		initRsrcDescVertex(&rdv);
-
 		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
@@ -79,7 +76,6 @@ int main()
 		// === Texture Description ===
 		D3D12_RESOURCE_DESC rdt{};
 		initResourceDescTexture(&rdt, &textureData);
-
 		ComPointer<ID3D12Resource2> texture;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
 
@@ -89,7 +85,6 @@ int main()
 		dhd.NumDescriptors = 1;
 		dhd.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		dhd.NodeMask = 0;
-
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&srvHeap));
 
@@ -117,13 +112,11 @@ int main()
 		// copy CPU resource --> GPU resource
 		auto* cmdList = DXContext::Get().InitCommandList();
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, textureSize, 1024);
-
 		D3D12_BOX textureSizeAsBox;
 		textureSizeAsBox.left = textureSizeAsBox.top = textureSizeAsBox.front = 0;
 		textureSizeAsBox.right = textureData.width;
 		textureSizeAsBox.bottom = textureData.height;
 		textureSizeAsBox.back = 1;
-
 		D3D12_TEXTURE_COPY_LOCATION txtcSrc, txtcDst;
 		txtcSrc.pResource = uploadBuffer;
 		txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -136,7 +129,6 @@ int main()
 		txtcDst.pResource = texture;
 		txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		txtcDst.PlacedFootprint.Offset = 0;
-
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 		DXContext::Get().ExecuteCommandList();
 
@@ -152,9 +144,8 @@ int main()
 		// === Pipeline State Description ===
 		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout, (UINT)_countof(vertexLayout), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
 		GPSODescDirector PSOdirector;
-		PSOdirector.construct(PSObuilder);
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.getDescriptor();
-
+		PSOdirector.Construct(PSObuilder);
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.GetDescriptor();
 		ComPointer<ID3D12PipelineState> pso;
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
 
