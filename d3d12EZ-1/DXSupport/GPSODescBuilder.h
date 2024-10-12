@@ -61,7 +61,7 @@ public:
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC GetDescriptor() override;
 };
 
-/*class GPSODescBuilder3D : public GPSODescBuilder
+class GPSODescBuilder3D : public GPSODescBuilder
 {
 	GPSODescBuilder3D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 public:
@@ -77,7 +77,9 @@ public:
 	void BuildDepthStencil() override;
 	void BuildSample() override;
 	void BuildPSODetails() override;
-};*/
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC GetDescriptor() override;
+};
 
 class GPSODescDirector
 {
