@@ -26,7 +26,6 @@ public:
 	D3D12_RESOURCE_DESC desc;
 };
 
-
 class InptElmtDesc : public Descriptor 
 {
 public:
