@@ -251,7 +251,6 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSODescBuilder3D::GetDescriptor()
 	return descClass.desc;
 }
 
-
 // === PL Description Builder ===
 void GPSODescDirector::Construct(GPSODescBuilder& builder)
 {

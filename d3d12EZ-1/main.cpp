@@ -20,10 +20,15 @@ void initPipelineState(D3D12_GRAPHICS_PIPELINE_STATE_DESC* gfxpsd, ID3D12RootSig
 void uncrnVomit(float* color, float delta);
 void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData);
 
-struct Vertex
+struct Vertex2D
 {
 	float x, y;
 	float u, v;
+};
+struct VertexCube
+{
+	float x, y, z;
+	float r, g, b;
 };
 struct ARCorrection
 {
@@ -31,6 +36,37 @@ struct ARCorrection
 	float zoom;
 	float sinAngle;
 	float cosAngle;
+};
+
+// === 2D Vertex Data ===
+Vertex2D vertices2D[] =
+{
+	{ -1.0f, -1.0f, 0.0f, 1.0f},
+	{  0.0f,  1.0f, 0.5f, 0.0f},
+	{  1.0f, -1.0f, 1.0f, 1.0f},
+};
+D3D12_INPUT_ELEMENT_DESC vertexLayout2D[] =
+{
+	{"Position", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	{"Texcoord", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float) * 2, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+};
+
+// === 3D Vertex Data (Cube) ===
+VertexCube verticesCube[] =
+{
+	{  1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f},
+	{  1.0f, -1.0f,  1.0f,  0.75f, 0.25f, 0.0f},
+	{ -1.0f, -1.0f,  1.0f,  0.25f, 0.75f, 0.0f},
+	{ -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f},
+	{  1.0f,  1.0f, -1.0f,  0.0f,  0.75f, 0.25f},
+	{  1.0f, -1.0f, -1.0f,  0.0f,  0.25f, 0.75f},
+	{ -1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  1.0f},
+	{ -1.0f,  1.0f, -1.0f,  0.5f,  0.0f,  0.5f}
+};
+D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
+{
+	{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	{"Color", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, sizeof(float) * 3, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 };
 
 // D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
@@ -44,19 +80,6 @@ int main()
 		initHeapPropsUpload(&hpUpload);
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
-
-		// === Vertex Data ===
-		Vertex vertices[] =
-		{
-			{ -1.0f, -1.0f, 0.0f, 1.0f},
-			{  0.0f,  1.0f, 0.5f, 0.0f},
-			{  1.0f, -1.0f, 1.0f, 1.0f},
-		};
-		D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
-		{
-			{"Position", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-			{"Texcoord", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float) * 2, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		};
 
 		// === Texture Data ===
 		ImageLoader::ImageData textureData;
@@ -106,7 +129,7 @@ int main()
 		uploadRange.End = 1024 + textureSize;
 		uploadBuffer->Map(0, &uploadRange, (void**)& uploadBufferAddress);
 		memcpy(&uploadBufferAddress[0], textureData.data.data(), textureSize);
-		memcpy(&uploadBufferAddress[textureSize], vertices, sizeof(vertices));
+		memcpy(&uploadBufferAddress[textureSize], vertices2D, sizeof(vertices2D));
 		uploadBuffer->Unmap(0, &uploadRange);
 
 		// copy CPU resource --> GPU resource
@@ -142,7 +165,7 @@ int main()
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSignatureShader.GetBuffer(), rootSignatureShader.GetSize(), IID_PPV_ARGS(&rootSignature));
 
 		// === Pipeline State Description ===
-		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout, (UINT)_countof(vertexLayout), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
+		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout2D, (UINT)_countof(vertexLayout2D), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
 		GPSODescDirector PSOdirector;
 		PSOdirector.Construct(PSObuilder);
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod = PSObuilder.GetDescriptor();
@@ -152,8 +175,8 @@ int main()
 		// === Vertex Buffer View ===
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
 		vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-		vbv.SizeInBytes = sizeof(vertices) * _countof(vertices);
-		vbv.StrideInBytes = sizeof(Vertex);
+		vbv.SizeInBytes = sizeof(vertices2D) * _countof(vertices2D);
+		vbv.StrideInBytes = sizeof(Vertex2D);
 
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
@@ -215,7 +238,7 @@ int main()
 			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart()); // error starts here
 			
 			// Draw
-			cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
+			cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0);
 
 			DXWindow::Get().EndFrame(cmdList);
 
