@@ -80,4 +80,6 @@ bool ImageLoader::LoadImageFromDisk(const std::filesystem::path& imagePath, Imag
     __ImageLoader_CAR(
         wicFrameDecoder->CopyPixels(&copyRect, stride, size, (BYTE*)data.data.data())
     );
+
+    return true;
 }
