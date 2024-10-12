@@ -54,14 +54,23 @@ D3D12_INPUT_ELEMENT_DESC vertexLayout2D[] =
 // === 3D Vertex Data (Cube) ===
 VertexCube verticesCube[] =
 {
-	{  1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f},
-	{  1.0f, -1.0f,  1.0f,  0.75f, 0.25f, 0.0f},
-	{ -1.0f, -1.0f,  1.0f,  0.25f, 0.75f, 0.0f},
-	{ -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f},
-	{  1.0f,  1.0f, -1.0f,  0.0f,  0.75f, 0.25f},
-	{  1.0f, -1.0f, -1.0f,  0.0f,  0.25f, 0.75f},
-	{ -1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  1.0f},
-	{ -1.0f,  1.0f, -1.0f,  0.5f,  0.0f,  0.5f}
+	{ -1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  0.0f}, // 0 
+	{ -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f}, // 1 
+	{  1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  0.0f}, // 2 
+	{  1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f}, // 3 
+	{ -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f}, // 4 
+	{ -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  1.0f}, // 5 
+	{  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f}, // 6 
+	{  1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  1.0f}  // 7 
+};
+WORD cubeIndices[] =
+{
+	0, 1, 2, 0, 2, 3,
+	4, 6, 5, 4, 7, 6,
+	4, 5, 1, 4, 1, 0,
+	3, 2, 6, 3, 6, 7,
+	1, 5, 6, 1, 6, 2,
+	4, 0, 3, 4, 3, 7
 };
 D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
 {
@@ -192,17 +201,19 @@ int main()
 
 			// begin drawing
 			cmdList = DXContext::Get().InitCommandList();
-
 			DXWindow::Get().BeginFrame(cmdList);
 			
+			// == Clear Depth Stencil Buffer ==
+
 			// == Pipeline State Object ==
 			cmdList->SetPipelineState(pso);
 			cmdList->SetGraphicsRootSignature(rootSignature);
 			cmdList->SetDescriptorHeaps(1, &srvHeap);
 
 			// == Input Assembler ==
-			cmdList->IASetVertexBuffers(0, 1, &vbv);
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			cmdList->IASetVertexBuffers(0, 1, &vbv);
+			// cmdList->IASetIndexBuffer();
 
 			// == Rasterizer ==
 			D3D12_VIEWPORT vp;
