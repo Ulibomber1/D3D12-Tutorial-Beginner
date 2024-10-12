@@ -3,16 +3,10 @@
 bool DXContext::Init()
 {
 	// A factory for various common graphics infrastructure in DirectX
-	if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory))))
-	{
-		return false;
-	}
+	if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory)))) return false;
 
 	// A virtual adapter that allows for creation of various D3D12 objects & resources
-	if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device))))
-	{
-		return false;
-	}
+	if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device)))) return false;
 
 	// Create a command queue description
 	D3D12_COMMAND_QUEUE_DESC cmdQueueDesc{};
@@ -22,33 +16,18 @@ bool DXContext::Init()
 	cmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 
 	// create the command queue with the above description
-	if (FAILED(m_device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&m_cmdQueue))))
-	{
-		return false;
-	}
+	if (FAILED(m_device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&m_cmdQueue)))) return false;
 
 	// Create the fence...
-	if (FAILED(m_device->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence))))
-	{
-		return false;
-	}
+	if (FAILED(m_device->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)))) return false;
 	m_fenceEvent = CreateEvent(nullptr, false, false, nullptr); // ...and its event
-	if (!m_fenceEvent)
-	{
-		return false;
-	}
+	if (!m_fenceEvent) return false;
 
 	// Create the command allocator, which is a heap where commands in command lists are stored
-	if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cmdAllocator))))
-	{
-		return false;
-	}
+	if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cmdAllocator)))) return false;
 
 	// Create the command list, an interface instance that allows the user to write commands into the command allocator
-	if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_cmdList))))
-	{
-		return false;
-	}
+	if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_cmdList)))) return false;
 
 	return true;
 }
