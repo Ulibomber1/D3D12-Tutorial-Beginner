@@ -85,6 +85,8 @@ int main()
 	DXDebugLayer::Get().Init();
 	if (DXContext::Get().Init() && DXWindow::Get().Init())
 	{
+		auto* cmdList = DXContext::Get().InitCommandList();
+
 		D3D12_HEAP_PROPERTIES hpUpload{};
 		initHeapPropsUpload(&hpUpload);
 		D3D12_HEAP_PROPERTIES hpDefault{};
@@ -113,56 +115,68 @@ int main()
 
 		// === Descriptor Heap for Textures ===
 		D3D12_DESCRIPTOR_HEAP_DESC dhd{};
-		dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		dhd.NumDescriptors = 1;
-		dhd.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		dhd.NodeMask = 0;
+		{
+			dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			dhd.NumDescriptors = 1;
+			dhd.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			dhd.NodeMask = 0;
+		}
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&srvHeap));
 
 		// === SRV ===
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
-		srv.Format = textureData.giPixelFormat;
-		srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srv.Texture2D.MipLevels = 1;
-		srv.Texture2D.MostDetailedMip = 0;
-		srv.Texture2D.PlaneSlice = 0;
-		srv.Texture2D.ResourceMinLODClamp = 0.0f;
+		{
+			srv.Format = textureData.giPixelFormat;
+			srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			srv.Texture2D.MipLevels = 1;
+			srv.Texture2D.MostDetailedMip = 0;
+			srv.Texture2D.PlaneSlice = 0;
+			srv.Texture2D.ResourceMinLODClamp = 0.0f;
+		}
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
 
-		// copy void* --> CPU resource
-		char* uploadBufferAddress;
-		D3D12_RANGE uploadRange;
-		uploadRange.Begin = 0;
-		uploadRange.End = 1024 + textureSize;
-		uploadBuffer->Map(0, &uploadRange, (void**)& uploadBufferAddress);
-		memcpy(&uploadBufferAddress[0], textureData.data.data(), textureSize);
-		memcpy(&uploadBufferAddress[textureSize], vertices2D, sizeof(vertices2D));
-		uploadBuffer->Unmap(0, &uploadRange);
+		// copy void* (Memory) --> CPU resource (Upload Buffer)
+		cmdList = DXContext::Get().InitCommandList();
+		{
+			char* uploadBufferAddress;
+			D3D12_RANGE uploadRange;
+			uploadRange.Begin = 0;
+			uploadRange.End = 1024 + textureSize;
+			uploadBuffer->Map(0, &uploadRange, (void**)&uploadBufferAddress);
+			memcpy(&uploadBufferAddress[0], textureData.data.data(), textureSize);
+			memcpy(&uploadBufferAddress[textureSize], vertices2D, sizeof(vertices2D));
+			uploadBuffer->Unmap(0, &uploadRange);
+		}
 
-		// copy CPU resource --> GPU resource
-		auto* cmdList = DXContext::Get().InitCommandList();
+		// copy CPU resource (Upload Buffer) --> GPU resource (Vertex Buffer)
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, textureSize, 1024);
+
+		// copy 
 		D3D12_BOX textureSizeAsBox;
-		textureSizeAsBox.left = textureSizeAsBox.top = textureSizeAsBox.front = 0;
-		textureSizeAsBox.right = textureData.width;
-		textureSizeAsBox.bottom = textureData.height;
-		textureSizeAsBox.back = 1;
 		D3D12_TEXTURE_COPY_LOCATION txtcSrc, txtcDst;
-		txtcSrc.pResource = uploadBuffer;
-		txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		txtcSrc.PlacedFootprint.Offset = 0;
-		txtcSrc.PlacedFootprint.Footprint.Width = textureData.width;
-		txtcSrc.PlacedFootprint.Footprint.Height = textureData.height;
-		txtcSrc.PlacedFootprint.Footprint.Depth = 1;
-		txtcSrc.PlacedFootprint.Footprint.RowPitch = textureStride;
-		txtcSrc.PlacedFootprint.Footprint.Format = textureData.giPixelFormat;
-		txtcDst.pResource = texture;
-		txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-		txtcDst.PlacedFootprint.Offset = 0;
+		{
+			textureSizeAsBox.left = textureSizeAsBox.top = textureSizeAsBox.front = 0;
+			textureSizeAsBox.right = textureData.width;
+			textureSizeAsBox.bottom = textureData.height;
+			textureSizeAsBox.back = 1;
+		
+			txtcSrc.pResource = uploadBuffer;
+			txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+			txtcSrc.PlacedFootprint.Offset = 0;
+			txtcSrc.PlacedFootprint.Footprint.Width = textureData.width;
+			txtcSrc.PlacedFootprint.Footprint.Height = textureData.height;
+			txtcSrc.PlacedFootprint.Footprint.Depth = 1;
+			txtcSrc.PlacedFootprint.Footprint.RowPitch = textureStride;
+			txtcSrc.PlacedFootprint.Footprint.Format = textureData.giPixelFormat;
+			txtcDst.pResource = texture;
+			txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+			txtcDst.PlacedFootprint.Offset = 0;
+		}
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 		DXContext::Get().ExecuteCommandList();
+
 
 		// === Shaders ===
 		Shader rootSignatureShader("RootSignature.cso");
@@ -183,9 +197,11 @@ int main()
 
 		// === Vertex Buffer View ===
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
-		vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-		vbv.SizeInBytes = sizeof(vertices2D) * _countof(vertices2D);
-		vbv.StrideInBytes = sizeof(Vertex2D);
+		{
+			vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+			vbv.SizeInBytes = sizeof(vertices2D) * _countof(vertices2D);
+			vbv.StrideInBytes = sizeof(Vertex2D);
+		}
 
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
@@ -217,16 +233,20 @@ int main()
 
 			// == Rasterizer ==
 			D3D12_VIEWPORT vp;
-			vp.TopLeftX = vp.TopLeftY = 0;
-			vp.Width = DXWindow::Get().GetWidth();
-			vp.Height = DXWindow::Get().GetHeight();
-			vp.MinDepth = 1.f;
-			vp.MaxDepth = 0.f;
+			{
+				vp.TopLeftX = vp.TopLeftY = 0;
+				vp.Width = DXWindow::Get().GetWidth();
+				vp.Height = DXWindow::Get().GetHeight();
+				vp.MinDepth = 1.f;
+				vp.MaxDepth = 0.f;
+			}
 			cmdList->RSSetViewports(1, &vp);
 			RECT scRect;
-			scRect.left = scRect.top = 0;
-			scRect.right = DXWindow::Get().GetWidth();
-			scRect.bottom = DXWindow::Get().GetHeight();
+			{
+				scRect.left = scRect.top = 0;
+				scRect.right = DXWindow::Get().GetWidth();
+				scRect.bottom = DXWindow::Get().GetHeight();
+			}
 			cmdList->RSSetScissorRects(1, &scRect);
 
 			// == Update ==
