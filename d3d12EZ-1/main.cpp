@@ -98,7 +98,7 @@ int main()
 		uint32_t textureStride = textureData.width * ((textureData.bpp + 7) / 8);
 		uint32_t textureSize = textureData.height * textureStride;
 
-		// === Upload & Vertex Buffer Description ===
+		// === Buffer Descriptions ===
 		D3D12_RESOURCE_DESC rdu{};
 		initRsrcDescUpload(&rdu, textureSize);
 		D3D12_RESOURCE_DESC rdv{};
@@ -137,8 +137,8 @@ int main()
 		}
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
 
+		// === Resource Uploads ===
 		// copy void* (Memory) --> CPU resource (Upload Buffer)
-		cmdList = DXContext::Get().InitCommandList();
 		{
 			char* uploadBufferAddress;
 			D3D12_RANGE uploadRange;
@@ -150,10 +150,10 @@ int main()
 			uploadBuffer->Unmap(0, &uploadRange);
 		}
 
-		// copy CPU resource (Upload Buffer) --> GPU resource (Vertex Buffer)
+		// copy vertex Buffer (Upload Buffer) --> GPU resource (Vertex Buffer)
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, textureSize, 1024);
 
-		// copy 
+		// copy texture (Upload Buffer) --> GPU resource (Texture)
 		D3D12_BOX textureSizeAsBox;
 		D3D12_TEXTURE_COPY_LOCATION txtcSrc, txtcDst;
 		{
@@ -170,13 +170,36 @@ int main()
 			txtcSrc.PlacedFootprint.Footprint.Depth = 1;
 			txtcSrc.PlacedFootprint.Footprint.RowPitch = textureStride;
 			txtcSrc.PlacedFootprint.Footprint.Format = textureData.giPixelFormat;
+
 			txtcDst.pResource = texture;
 			txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 			txtcDst.PlacedFootprint.Offset = 0;
 		}
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
-		DXContext::Get().ExecuteCommandList();
 
+
+		// === Resource Barriers ===
+		D3D12_RESOURCE_BARRIER vertBuffBarr; // Vertex Buffer Resource Barrier
+		{
+			vertBuffBarr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify the type of resource barrier
+			vertBuffBarr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE; // Specifies whether the barrier should be floating; if so, what type.
+			vertBuffBarr.Transition.pResource = vertexBuffer; // The resource...
+			vertBuffBarr.Transition.Subresource = 0; // ...and its subresources
+			vertBuffBarr.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST; // Specify the state before...
+			vertBuffBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; // ...and the state after
+		}
+		D3D12_RESOURCE_BARRIER textureBarr; // Texture Resource Barrier
+		{
+			textureBarr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify the type of resource barrier
+			textureBarr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE; // Specifies whether the barrier should be floating; if so, what type.
+			textureBarr.Transition.pResource = texture; // The resource...
+			textureBarr.Transition.Subresource = 0; // ...and its subresources
+			textureBarr.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST; // Specify the state before...
+			textureBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE; // ...and the state after
+		}
+		D3D12_RESOURCE_BARRIER barriers[] = { vertBuffBarr, textureBarr };
+		cmdList->ResourceBarrier(_countof(barriers), barriers);
+		DXContext::Get().ExecuteCommandList();
 
 		// === Shaders ===
 		Shader rootSignatureShader("RootSignature.cso");
@@ -187,7 +210,7 @@ int main()
 		ComPointer<ID3D12RootSignature> rootSignature;
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSignatureShader.GetBuffer(), rootSignatureShader.GetSize(), IID_PPV_ARGS(&rootSignature));
 
-		// === Pipeline State Description ===
+		// === Pipeline State Object Description ===
 		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout2D, (UINT)_countof(vertexLayout2D), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
 		GPSODescDirector PSOdirector;
 		PSOdirector.Construct(PSObuilder);
@@ -266,16 +289,20 @@ int main()
 			// == Root Sig ==
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 			cmdList->SetGraphicsRoot32BitConstants(1, 4, &correction, 0);
-			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart()); // error starts here
+			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0);
+			// cmdList->DrawIndexedInstanced()
 
 			DXWindow::Get().EndFrame(cmdList);
 
 			// Finish and Show the render
 			DXContext::Get().ExecuteCommandList();
 			DXWindow::Get().Present();
+
+			// == Timed Updates ==
+
 		}
 
 		// Flush command queue
@@ -291,6 +318,7 @@ int main()
 	DXDebugLayer::Get().Shutdown();
 }
 
+// Make these into static inline funcs in header??
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES* heapProps)
 {
 	heapProps->Type = D3D12_HEAP_TYPE_UPLOAD; // What type of heap this is is. We specify one that uploads to the GPU
