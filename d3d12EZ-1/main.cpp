@@ -83,7 +83,7 @@ D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
 int main()
 {
 	DXDebugLayer::Get().Init();
-	if (DXContext::Get().Init() && DXWindow::Get().Init())
+	if (DXContext::Get().Init() && DXWindow::Get().Init() && DirectX::XMVerifyCPUSupport())
 	{
 		auto* cmdList = DXContext::Get().InitCommandList();
 
