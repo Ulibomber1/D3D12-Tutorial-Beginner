@@ -87,10 +87,13 @@ int main()
 	{
 		auto* cmdList = DXContext::Get().InitCommandList();
 
+		// === Heap Descriptors ===
 		D3D12_HEAP_PROPERTIES hpUpload{};
 		initHeapPropsUpload(&hpUpload);
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
+		D3D12_HEAP_PROPERTIES hpDepth{};
+		initHeapPropsDefault(&hpDepth);
 
 		// === Texture Data ===
 		ImageLoader::ImageData textureData;
@@ -98,14 +101,36 @@ int main()
 		uint32_t textureStride = textureData.width * ((textureData.bpp + 7) / 8);
 		uint32_t textureSize = textureData.height * textureStride;
 
-		// === Buffer Descriptions ===
+		// === Buffer Descriptors ===
 		D3D12_RESOURCE_DESC rdu{};
 		initRsrcDescUpload(&rdu, textureSize);
 		D3D12_RESOURCE_DESC rdv{};
 		initRsrcDescVertex(&rdv);
-		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
+		D3D12_RESOURCE_DESC rdd{};
+		{
+			rdd.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // how many dimensions this resource has
+			rdd.Alignment = 0; // 
+			rdd.Width = DXWindow::Get().GetWidth(); // width of the buffer.
+			rdd.Height = DXWindow::Get().GetHeight(); // height of the buffer
+			rdd.DepthOrArraySize = 1; // same as previous comment
+			rdd.MipLevels = 0; // specify which level of mipmapping to use (1 means no mipmapping)
+			rdd.Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
+			rdd.SampleDesc.Count = 1; // the amount of samples
+			rdd.SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
+			rdd.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
+			rdd.Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
+		}
+		D3D12_CLEAR_VALUE clearValue =
+		{
+			.Format = DXGI_FORMAT_D32_FLOAT,
+			.DepthStencil = {1.0f, 0}
+		};
+
+		// === Heap & Buffer Creation ===
+		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer, depthBuffer;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
+		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDepth, D3D12_HEAP_FLAG_NONE, &rdd, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&depthBuffer));
 
 		// === Texture Description ===
 		D3D12_RESOURCE_DESC rdt{};
@@ -113,7 +138,7 @@ int main()
 		ComPointer<ID3D12Resource2> texture;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
 
-		// === Descriptor Heap for Textures ===
+		// === SRV Descriptor Heap (for now, just Textures) ===
 		D3D12_DESCRIPTOR_HEAP_DESC dhd{};
 		{
 			dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -136,6 +161,19 @@ int main()
 			srv.Texture2D.ResourceMinLODClamp = 0.0f;
 		}
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
+
+		// === DSV Descriptor Heap ===
+		D3D12_DESCRIPTOR_HEAP_DESC depthDHD{};
+		{
+			depthDHD.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+			depthDHD.NumDescriptors = 1;
+		}
+		ComPointer<ID3D12DescriptorHeap> dsvDescHeap;
+		DXContext::Get().GetDevice()->CreateDescriptorHeap(&depthDHD, IID_PPV_ARGS(&dsvDescHeap));
+
+		// === DSV ===
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
+		DXContext::Get().GetDevice()->CreateDepthStencilView(depthBuffer.Get(), nullptr, dsvHandle);
 
 		// === Resource Uploads ===
 		// copy void* (Memory) --> CPU resource (Upload Buffer)
@@ -176,7 +214,6 @@ int main()
 			txtcDst.PlacedFootprint.Offset = 0;
 		}
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
-
 
 		// === Resource Barriers ===
 		D3D12_RESOURCE_BARRIER vertBuffBarr; // Vertex Buffer Resource Barrier
@@ -236,6 +273,7 @@ int main()
 			{
 				DXContext::Get().Flush(DXWindow::Get().GetFrameCount()); // Flush Command queue 
 				DXWindow::Get().Resize();
+				// resize depth buffer as well
 			}
 
 			// begin drawing
