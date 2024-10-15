@@ -69,6 +69,11 @@ private:
 	ComPointer<ID3D12DescriptorHeap> m_rtvDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount] = {};
 
+	ComPointer<ID3D12Resource2> m_depthBuffer;
+
+	ComPointer<ID3D12DescriptorHeap> m_dsvDescHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_dsvHandle = {};
+
 
 // Singleton (because *typically* you don't want multiple windows)
 public:
