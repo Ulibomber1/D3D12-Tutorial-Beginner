@@ -78,5 +78,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Pipeline.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
