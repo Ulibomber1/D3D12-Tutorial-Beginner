@@ -252,8 +252,6 @@ int main()
 			cmdList = DXContext::Get().InitCommandList();
 			DXWindow::Get().BeginFrame(cmdList);
 			
-			// == Clear Depth Stencil Buffer ==
-
 			// == Pipeline State Object ==
 			cmdList->SetPipelineState(pso);
 			cmdList->SetGraphicsRootSignature(rootSignature);

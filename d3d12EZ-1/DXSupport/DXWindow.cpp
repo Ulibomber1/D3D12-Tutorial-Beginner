@@ -242,11 +242,13 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
 
 	cmdlist->ResourceBarrier(1, &barr);
 
-	// Clear the RTV
+	// Clear the RTV and DSV
 	float clearColor[] = { .4f, .4f, .9f, 1.0f }; 
 	cmdlist->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], clearColor, 0, nullptr);
+	float clearDepth = 1.0f;
+	cmdlist->ClearDepthStencilView(m_dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepth, 0, 0, nullptr);
 	// Set CPU descriptor handles for the RTVs
-	cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, nullptr);
+	cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, &m_dsvHandle);
 }
 
 // Sets the state of the resource barrier for the RTV to Present (no changes allowed whilst in this state)

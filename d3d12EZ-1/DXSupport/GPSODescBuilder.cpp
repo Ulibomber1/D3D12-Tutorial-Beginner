@@ -199,7 +199,7 @@ void GPSODescBuilder3D::BuildRTV()
 }
 void GPSODescBuilder3D::BuildDSV()
 {
-	descClass.desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+	descClass.desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 }
 void GPSODescBuilder3D::BuildBlendState()
 {
@@ -218,12 +218,12 @@ void GPSODescBuilder3D::BuildBlendState()
 }
 void GPSODescBuilder3D::BuildDepthStencil()
 {
-	descClass.desc.DepthStencilState.DepthEnable = FALSE;
-	descClass.desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	descClass.desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	descClass.desc.DepthStencilState.DepthEnable = TRUE;
+	descClass.desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	descClass.desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	descClass.desc.DepthStencilState.StencilEnable = FALSE;
-	descClass.desc.DepthStencilState.StencilReadMask = 0;
-	descClass.desc.DepthStencilState.StencilWriteMask = 0;
+	descClass.desc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	descClass.desc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
 	descClass.desc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	descClass.desc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	descClass.desc.DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
