@@ -1,8 +1,8 @@
 /*
  *  Root Signature Layout (CPU)
-    - 0: float3 "Color"
+    - 0: float3 "Color" CPU r0 ---> GPU b0
     - 1: ARCorrection "aspect ratio correction"
-    - 2: descriptor table "textures"
+    - 2: descriptor table "textures" CPU r2 ---> GPU t0
  *  
 
     Root Signature Layout (GPU)

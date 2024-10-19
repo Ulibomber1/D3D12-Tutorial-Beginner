@@ -206,13 +206,37 @@ int main()
 		DXContext::Get().ExecuteCommandList();
 
 		// === Shaders ===
-		Shader rootSignatureShader("RootSignature.cso");
+		Shader rootSignatureShader("RootSignature.cso"); // will remove once the helper library is being used to serialize a root sig
 		Shader vertexShader("VertexShader.cso");
 		Shader pixelShader("PixelShader.cso");
 
 		// === Create Root Sig ===
 		ComPointer<ID3D12RootSignature> rootSignature;
-		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSignatureShader.GetBuffer(), rootSignatureShader.GetSize(), IID_PPV_ARGS(&rootSignature));
+		CD3DX12_DESCRIPTOR_RANGE descRange[1] = {};
+		descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		CD3DX12_ROOT_PARAMETER rootParams[3] = {};
+		rootParams[0].InitAsConstants(4, 0);
+		rootParams[1].InitAsConstants(4, 1);
+		rootParams[2].InitAsDescriptorTable(1, &descRange[0]);
+		D3D12_ROOT_SIGNATURE_FLAGS rootSigFlags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+		CD3DX12_STATIC_SAMPLER_DESC staticSampler[1] = {};
+		staticSampler[0].Init(0, D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc = {};
+		rootSigDesc.Init((UINT)std::size(rootParams), rootParams, 1, staticSampler, rootSigFlags);
+		ComPointer<ID3DBlob> rootSigBlob;
+		ComPointer<ID3DBlob> errorBlob;
+		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rootSigBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			return -2;
+		}
+		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 
 		// === Pipeline State Object Description ===
 		GPSODescBuilder2D PSObuilder(rootSignature, vertexLayout2D, (UINT)_countof(vertexLayout2D), &vertexShader, &pixelShader, (Shader*)nullptr, (Shader*)nullptr, (Shader*)nullptr); // we pass vertexLayout array since it will decay to a pointer anyways
