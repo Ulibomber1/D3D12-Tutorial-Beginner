@@ -104,13 +104,15 @@ int main()
 		initRsrcDescUpload(&rdu, textureSize);
 		D3D12_RESOURCE_DESC rdv{};
 		initRsrcDescVertex(&rdv);
-		
+		D3D12_RESOURCE_DESC rdi{};
+		initRsrcDescVertex(&rdi);
 
 		// === Heap & Buffer Creation ===
-		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer;
+		UINT numIndices = (UINT)std::size(cubeIndices);
+		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer, indexBuffer;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
-		
+		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdi, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&indexBuffer));
 
 		// === Texture Description ===
 		D3D12_RESOURCE_DESC rdt{};
@@ -140,22 +142,23 @@ int main()
 			srv.Texture2D.PlaneSlice = 0;
 			srv.Texture2D.ResourceMinLODClamp = 0.0f;
 		}
-		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart()); // bug here
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
 
 		// === Resource Uploads ===
 		// copy void* (Memory) --> CPU resource (Upload Buffer)
 		{
-			char* uploadBufferAddress;
+			char* uploadBufferAddress = nullptr;
 			D3D12_RANGE uploadRange;
 			uploadRange.Begin = 0;
-			uploadRange.End = 1024 + textureSize;
+			uploadRange.End = rdu.Width;
 			uploadBuffer->Map(0, &uploadRange, (void**)&uploadBufferAddress);
 			memcpy(&uploadBufferAddress[0], textureData.data.data(), textureSize);
 			memcpy(&uploadBufferAddress[textureSize], vertices2D, sizeof(vertices2D));
+			memcpy(&uploadBufferAddress[textureSize + sizeof(vertices2D)], cubeIndices, sizeof(cubeIndices));
 			uploadBuffer->Unmap(0, &uploadRange);
 		}
 
-		// copy vertex Buffer (Upload Buffer) --> GPU resource (Vertex Buffer)
+		// copy vertex data (Upload Buffer) --> GPU resource (Vertex Buffer)
 		cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, textureSize, 1024);
 
 		// copy texture (Upload Buffer) --> GPU resource (Texture)
@@ -182,6 +185,9 @@ int main()
 		}
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 
+		// copy index data (upload buffer) --> GPU Resource (Index Buffer)
+		cmdList->CopyBufferRegion(indexBuffer, 0, uploadBuffer, textureSize + 1024, 1024);
+
 		// === Resource Barriers ===
 		D3D12_RESOURCE_BARRIER vertBuffBarr; // Vertex Buffer Resource Barrier
 		{
@@ -201,8 +207,19 @@ int main()
 			textureBarr.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST; // Specify the state before...
 			textureBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE; // ...and the state after
 		}
-		D3D12_RESOURCE_BARRIER barriers[] = { vertBuffBarr, textureBarr };
+		D3D12_RESOURCE_BARRIER indexBuffBarr; // Texture Resource Barrier
+		{
+			indexBuffBarr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify the type of resource barrier
+			indexBuffBarr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE; // Specifies whether the barrier should be floating; if so, what type.
+			indexBuffBarr.Transition.pResource = indexBuffer; // The resource...
+			indexBuffBarr.Transition.Subresource = 0; // ...and its subresources
+			indexBuffBarr.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST; // Specify the state before...
+			indexBuffBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE; // ...and the state after
+		}
+		D3D12_RESOURCE_BARRIER barriers[] = { vertBuffBarr, textureBarr, indexBuffBarr };
 		cmdList->ResourceBarrier(_countof(barriers), barriers);
+
+		// === Execute Resource Uploads ===
 		DXContext::Get().ExecuteCommandList();
 
 		// === Shaders ===
@@ -254,6 +271,14 @@ int main()
 			vbv.StrideInBytes = sizeof(Vertex2D);
 		}
 
+		// === Index Buffer View ===
+		D3D12_INDEX_BUFFER_VIEW ibv{};
+		{
+			ibv.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+			ibv.SizeInBytes = numIndices * sizeof(WORD);
+			ibv.Format = DXGI_FORMAT_R16_UINT;
+		}
+
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
@@ -264,12 +289,6 @@ int main()
 			{
 				DXContext::Get().Flush(DXWindow::Get().GetFrameCount()); // Flush Command queue 
 				DXWindow::Get().Resize();
-				// resize depth buffer as well
-
-				// release old depth buffer
-
-				// create new 
-
 			}
 
 			// begin drawing
@@ -284,7 +303,7 @@ int main()
 			// == Input Assembler ==
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			cmdList->IASetVertexBuffers(0, 1, &vbv);
-			// cmdList->IASetIndexBuffer();
+			cmdList->IASetIndexBuffer(&ibv);
 
 			// == Rasterizer ==
 			D3D12_VIEWPORT vp;
@@ -373,7 +392,7 @@ void initRsrcDescUpload(D3D12_RESOURCE_DESC* rscDesc, uint32_t imgSize)
 {
 	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
 	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-	rscDesc->Width = 1024 + imgSize; // width of the buffer. 1024 is an arbitrary bit width
+	rscDesc->Width = 2048 + imgSize; // width of the buffer. 1024 is an arbitrary bit width
 	rscDesc->Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
 	rscDesc->DepthOrArraySize = 1; // same as previous comment
 	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
