@@ -1,28 +1,36 @@
-#include "RootSignature.hlsl"
-#include "Pipeline.hlsli"
+struct VS_Output
+{
+	float2 uv : Texcoord;
+	float4 pos : SV_Position;
+};
+struct VS_Output1
+{
+	float4 col : Color;
+	float4 pos : SV_Position;
+};
+struct Rotation
+{
+	matrix transform;
+};
+ConstantBuffer<Rotation> rot : register(b1);
+ConstantBuffer<Rotation> rot1 : register(b2);
 
-ARCorrection correction : register(b1);
-
-[RootSignature(ROOTSIG)]
-// takes a 2D position as input, and returns the position in homogeneous 3D space
-void main(
-    // == IN ==
-    in float2 pos : Position,
-    in float2 uv : Texcoord,
-
-    // == OUT ==
-    out float2 o_uv : Texcoord,
-    out float4 o_pos : SV_Position
-)
-{ 
-    // Rules of TRNFRMTN. Model -> View -> Projection
-    float2 px; 
-    px.x = (pos.x * correction.cosAngle) - (pos.y * correction.sinAngle); // Model
-    px.y = (pos.x * correction.sinAngle) + (pos.y * correction.cosAngle);
-    px *= correction.zoom; // view
-    px.x *= correction.aspectRatio; // projection
-    
-    o_pos = float4(px, 0.0f, 1.0f);
-    o_uv = uv;
+VS_Output main(float2 pos : POSITION, float2 uv : TEXCOORD)
+{
+	VS_Output vertexOut;
+	
+	vertexOut.pos = mul(float4(pos, 0.0f, 1.0f), rot.transform);
+	vertexOut.uv = uv;
+	
+	return vertexOut;
 }
 
+/*VS_Output1 main(float3 pos : POSITION, float3 color : COLOR)
+{
+	VS_Output1 vertexOut;
+		
+    vertexOut.pos = mul(float4(pos, 1.0f), rot1.transform);
+    vertexOut.col = float4(color, 1.0f);
+	
+	return vertexOut;
+}*/

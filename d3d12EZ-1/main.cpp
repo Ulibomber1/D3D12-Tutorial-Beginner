@@ -12,6 +12,8 @@
 
 #include <DXSupport/DXContext.h>
 
+using namespace DirectX;
+
 void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
 void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
 void initRsrcDescUpload(D3D12_RESOURCE_DESC*, uint32_t);
@@ -29,13 +31,6 @@ struct VertexCube
 {
 	float x, y, z;
 	float r, g, b;
-};
-struct ARCorrection
-{
-	float aspectRatio;
-	float zoom;
-	float sinAngle;
-	float cosAngle;
 };
 
 // === 2D Vertex Data ===
@@ -231,10 +226,11 @@ int main()
 		ComPointer<ID3D12RootSignature> rootSignature;
 		CD3DX12_DESCRIPTOR_RANGE descRange[1] = {};
 		descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-		CD3DX12_ROOT_PARAMETER rootParams[3] = {};
+		CD3DX12_ROOT_PARAMETER rootParams[4] = {};
 		rootParams[0].InitAsConstants(4, 0);
-		rootParams[1].InitAsConstants(4, 1);
-		rootParams[2].InitAsDescriptorTable(1, &descRange[0]);
+		rootParams[1].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+		rootParams[2].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 2, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+		rootParams[3].InitAsDescriptorTable(1, &descRange[0]);
 		D3D12_ROOT_SIGNATURE_FLAGS rootSigFlags =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS |
@@ -278,7 +274,23 @@ int main()
 			ibv.SizeInBytes = numIndices * sizeof(WORD);
 			ibv.Format = DXGI_FORMAT_R16_UINT;
 		}
+		XMMATRIX viewProjection;
+		{
+			// setup view mat
+			auto eyePos = XMVectorSet(0, 0, -3, 1);
+			auto focusPos = XMVectorSet(0, 0, 0, 1);
+			auto upDir = XMVectorSet(0, 1, 0, 0);
+			auto viewMtx = XMMatrixLookAtLH(eyePos, focusPos, upDir);
+			// setup perspective
+			auto aspectRatio = float(DXWindow::Get().GetWidth()) / float(DXWindow::Get().GetHeight());
+			auto projectionMtx = XMMatrixPerspectiveFovLH(XMConvertToRadians(65.f), aspectRatio, 0.1f, 100.0f);
+			// combine view and perspective matrices
+			viewProjection = viewMtx * projectionMtx;
+		}
 
+		// === RENDER LOOP ===
+		float time = 0.f;
+		const float timeStep = 0.005f;
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
@@ -295,17 +307,17 @@ int main()
 			cmdList = DXContext::Get().InitCommandList();
 			DXWindow::Get().BeginFrame(cmdList);
 			
-			// == Pipeline State Object ==
+			// == Pipeline State Object Updates ==
 			cmdList->SetPipelineState(pso);
 			cmdList->SetGraphicsRootSignature(rootSignature);
 			cmdList->SetDescriptorHeaps(1, &srvHeap);
 
-			// == Input Assembler ==
+			// == Input Assembler Updates ==
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			cmdList->IASetVertexBuffers(0, 1, &vbv);
 			cmdList->IASetIndexBuffer(&ibv);
 
-			// == Rasterizer ==
+			// == Rasterizer Updates ==
 			D3D12_VIEWPORT vp;
 			{
 				vp.TopLeftX = vp.TopLeftY = 0;
@@ -323,28 +335,31 @@ int main()
 			}
 			cmdList->RSSetScissorRects(1, &scRect);
 
-			// == Update ==
+			// == Misc. Updates ==
 			static float color[] = { 0.0f, 0.0f, 1.0f };
 			uncrnVomit(color, 0.0025f);
+			XMMATRIX illuminatiTM = XMMatrixTranspose(
+				XMMatrixRotationX(2.0f * time + 0.f) *
+				XMMatrixRotationY(4.0f * time + 0.f) *
+				XMMatrixRotationZ(1.0f * time + 0.f) * 
+				viewProjection
+			);
+			XMMATRIX cubeTM = XMMatrixTranspose(
+				XMMatrixRotationX(2.0f * time + 0.f) *
+				XMMatrixRotationY(4.0f * time + 0.f) *
+				XMMatrixRotationZ(1.0f * time + 0.f) *
+				viewProjection
+			);
 
-			static float angle = 0.0f;
-			angle += 0.005f;
-			ARCorrection correction
-			{
-				.aspectRatio = ((float)DXWindow::Get().GetHeight()) / ((float)DXWindow::Get().GetWidth()),
-				.zoom = 0.8f,
-				.sinAngle = sinf(angle),
-				.cosAngle = cosf(angle),
-			};
-
-			// == Root Sig ==
+			// == Root Sig Updates ==
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
-			cmdList->SetGraphicsRoot32BitConstants(1, 4, &correction, 0);
-			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
+			cmdList->SetGraphicsRoot32BitConstants(1, sizeof(illuminatiTM) / 4, &illuminatiTM, 0);
+			cmdList->SetGraphicsRoot32BitConstants(2, sizeof(cubeTM) / 4, &cubeTM, 0);
+			cmdList->SetGraphicsRootDescriptorTable(3, srvHeap->GetGPUDescriptorHandleForHeapStart());
 			
 			// Draw
 			cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0);
-			// cmdList->DrawIndexedInstanced()
+			// cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0);
 
 			DXWindow::Get().EndFrame(cmdList);
 
@@ -353,7 +368,7 @@ int main()
 			DXWindow::Get().Present();
 
 			// == Timed Updates ==
-
+			time += timeStep;
 		}
 
 		// Flush command queue
@@ -362,6 +377,7 @@ int main()
 		// Release Buffers
 		vertexBuffer.Release();
 		uploadBuffer.Release();
+		indexBuffer.Release();
 
 		DXWindow::Get().Shutdown();
 		DXContext::Get().Shutdown();

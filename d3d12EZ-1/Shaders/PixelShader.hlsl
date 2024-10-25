@@ -1,10 +1,7 @@
-#include "RootSignature.hlsl"
-
 float3 color : register(b0);
 Texture2D<float4> textures[] : register(t0);
 sampler textureSampler : register(s0);
 
-[RootSignature(ROOTSIG)]
 // takes an RGBA or other 4-float value and writes it to a render target
 void main(
     // == IN ==
