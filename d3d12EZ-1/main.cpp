@@ -218,7 +218,6 @@ int main()
 		DXContext::Get().ExecuteCommandList();
 
 		// === Shaders ===
-		Shader rootSignatureShader("RootSignature.cso"); // will remove once the helper library is being used to serialize a root sig
 		Shader vertexShader("VertexShader.cso");
 		Shader pixelShader("PixelShader.cso");
 
