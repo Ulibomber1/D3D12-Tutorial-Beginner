@@ -63,6 +63,7 @@ public:
 
 class GPSODescBuilder3D : public GPSODescBuilder
 {
+public:
 	GPSODescBuilder3D(ID3D12RootSignature* rs, D3D12_INPUT_ELEMENT_DESC* vl, UINT vls, Shader* vs, Shader* ps, Shader* ds, Shader* hs, Shader* gs);
 public:
 	void BuildRootSig(ID3D12RootSignature* rootSig) override;
