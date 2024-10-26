@@ -30,7 +30,6 @@ struct Vertex2D
 struct VertexCube
 {
 	float x, y, z;
-	float r, g, b;
 };
 
 // === 2D Vertex Data ===
@@ -49,14 +48,23 @@ D3D12_INPUT_ELEMENT_DESC vertexLayout2D[] =
 // === 3D Vertex Data (Cube) ===
 VertexCube verticesCube[] =
 {
-	{ -1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  0.0f}, // 0 
-	{ -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f}, // 1 
-	{  1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  0.0f}, // 2 
-	{  1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f}, // 3 
-	{ -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f}, // 4 
-	{ -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  1.0f}, // 5 
-	{  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f}, // 6 
-	{  1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  1.0f}  // 7 
+	{ -1.0f, -1.0f, -1.0f}, // 0 
+	{ -1.0f,  1.0f, -1.0f}, // 1 
+	{  1.0f,  1.0f, -1.0f}, // 2 
+	{  1.0f, -1.0f, -1.0f}, // 3 
+	{ -1.0f, -1.0f,  1.0f}, // 4 
+	{ -1.0f,  1.0f,  1.0f}, // 5 
+	{  1.0f,  1.0f,  1.0f}, // 6 
+	{  1.0f, -1.0f,  1.0f}  // 7 
+};
+XMFLOAT4 faceColors[] =
+{
+	{1.f, 0.f, 0.f, 1.f},
+	{0.f, 1.f, 0.f, 1.f},
+	{0.f, 0.f, 1.f, 1.f},
+	{1.f, 1.f, 0.f, 1.f},
+	{0.f, 1.f, 1.f, 1.f},
+	{1.f, 0.f, 1.f, 1.f}
 };
 WORD cubeIndices[] =
 {
@@ -69,11 +77,8 @@ WORD cubeIndices[] =
 };
 D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
 {
-	{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-	{"Color", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, sizeof(float) * 3, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+	{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 };
-
-// D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 
 int main()
 {
