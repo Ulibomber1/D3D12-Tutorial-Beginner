@@ -174,15 +174,16 @@ void GPSODescBuilder3D::BuildShaders(Shader* vertShader, Shader* pixShader, Shad
 void GPSODescBuilder3D::BuildRasterizer()
 {
 	descClass.desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // define the fill mode, which defines how the drawn objects are filled in for enclosed faces
-	descClass.desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // define what faces are culled, if at all
+	descClass.desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; // define what faces are culled, if at all
 	descClass.desc.RasterizerState.FrontCounterClockwise = FALSE; // define which face is the front
 	descClass.desc.RasterizerState.DepthBias = 0; // depth bias will attempt to push drawn objects forward
 	descClass.desc.RasterizerState.DepthBiasClamp = .0f;
 	descClass.desc.RasterizerState.SlopeScaledDepthBias = .0f;
-	descClass.desc.RasterizerState.DepthClipEnable = FALSE; // set whether z-clipping can occur
+	descClass.desc.RasterizerState.DepthClipEnable = TRUE; // set whether z-clipping can occur
 	descClass.desc.RasterizerState.MultisampleEnable = FALSE; // set whether multisample will be on
 	descClass.desc.RasterizerState.AntialiasedLineEnable = FALSE; // set whether anti-aliasing is on
 	descClass.desc.RasterizerState.ForcedSampleCount = 0; // the sample count for anti-aliasing
+	descClass.desc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 }
 void GPSODescBuilder3D::BuildStreamOutput()
 {
