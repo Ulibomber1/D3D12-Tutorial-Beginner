@@ -70,6 +70,8 @@
     <FxCompile Include="Shaders\VertexShader.hlsl" />
     <FxCompile Include="Shaders\PixelShader.hlsl" />
     <FxCompile Include="Shaders\RootSignature.hlsl" />
+    <FxCompile Include="Shaders\VertexShader2D.hlsl" />
+    <FxCompile Include="Shaders\PixelShader2D.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="app\auge_512_512_BGRA_32BPP.png">
