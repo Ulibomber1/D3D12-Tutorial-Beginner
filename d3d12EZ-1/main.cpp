@@ -23,8 +23,8 @@ void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageDat
 
 struct Vertex2D
 {
-	float x, y;
-	float u, v;
+	XMFLOAT2 position;
+	XMFLOAT2 texCoord;
 };
 struct VertexCube
 {
@@ -35,9 +35,9 @@ struct VertexCube
 // === 2D Vertex Data ===
 Vertex2D vertices2D[] =
 {
-	{ -1.0f, -1.0f, 0.0f, 1.0f},
-	{  0.0f,  1.0f, 0.5f, 0.0f},
-	{  1.0f, -1.0f, 1.0f, 1.0f},
+	{{ -1.0f, -1.0f}, {0.0f, 1.0f}},
+	{{  0.0f,  1.0f}, {0.5f, 0.0f}},
+	{{  1.0f, -1.0f}, {1.0f, 1.0f}}
 };
 D3D12_INPUT_ELEMENT_DESC vertexLayout2D[] =
 {
@@ -274,13 +274,13 @@ int main()
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
 		{
 			vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-			vbv.SizeInBytes = sizeof(vertices2D) * _countof(vertices2D);
+			vbv.SizeInBytes = sizeof(vertices2D);
 			vbv.StrideInBytes = sizeof(Vertex2D);
 		}
 		D3D12_VERTEX_BUFFER_VIEW vbv2{};
 		{
 			vbv2.BufferLocation = vertexBuffer2->GetGPUVirtualAddress();
-			vbv2.SizeInBytes = sizeof(verticesCube) * _countof(verticesCube);
+			vbv2.SizeInBytes = sizeof(verticesCube);
 			vbv2.StrideInBytes = sizeof(VertexCube);
 		}
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[2] = { vbv, vbv2 };
