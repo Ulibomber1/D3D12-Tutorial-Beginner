@@ -30,6 +30,10 @@ public:
 	{
 		return m_isFullscreen;
 	}
+	inline bool Is3D() const
+	{
+		return m_is3D;
+	}
 
 	inline UINT GetWidth() const
 	{
@@ -61,6 +65,7 @@ private:
 	UINT m_width = 1920;
 
 	bool m_isFullscreen = false;
+	bool m_is3D = true;
 
 	ComPointer<IDXGISwapChain3> m_swapChain;
 	ComPointer<ID3D12Resource2> m_buffers[FrameCount];

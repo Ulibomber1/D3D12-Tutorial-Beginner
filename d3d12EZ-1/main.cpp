@@ -21,18 +21,15 @@ void initRsrcDescBuffer(D3D12_RESOURCE_DESC*, uint32_t);
 void uncrnVomit(float* color, float delta);
 void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData);
 
+
+
+
+// === 2D Vertex Data ===
 struct Vertex2D
 {
 	XMFLOAT2 position;
 	XMFLOAT2 texCoord;
 };
-struct VertexCube
-{
-	XMFLOAT3 position;
-	XMFLOAT3 color;
-};
-
-// === 2D Vertex Data ===
 Vertex2D vertices2D[] =
 {
 	{{ -1.0f, -1.0f}, {0.0f, 1.0f}},
@@ -41,11 +38,16 @@ Vertex2D vertices2D[] =
 };
 D3D12_INPUT_ELEMENT_DESC vertexLayout2D[] =
 {
-	{"Position", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-	{"Texcoord", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float) * 2, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	{"POSITION", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	{"TEXCOORD", 0,  DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 };
 
 // === 3D Vertex Data (Cube) ===
+struct VertexCube
+{
+	XMFLOAT3 position;
+	XMFLOAT3 color;
+};
 VertexCube verticesCube[] =
 {
 	{{ -1.0f, -1.0f, -1.0f}, {  0.0f,  0.0f,  0.0f}}, // 0 
@@ -268,7 +270,9 @@ int main()
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod2D = PSObuilder2D.GetDescriptor();
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod3D = PSObuilder3D.GetDescriptor();
 		ComPointer<ID3D12PipelineState> pso;
+		ComPointer<ID3D12PipelineState> pso2D;
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod3D, IID_PPV_ARGS(&pso));
+		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod2D, IID_PPV_ARGS(&pso2D));
 
 		// === Vertex Buffer View(s) ===
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
@@ -283,7 +287,6 @@ int main()
 			vbv2.SizeInBytes = sizeof(verticesCube);
 			vbv2.StrideInBytes = sizeof(VertexCube);
 		}
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[2] = { vbv, vbv2 };
 
 		// === Index Buffer View ===
 		D3D12_INDEX_BUFFER_VIEW ibv{};
@@ -316,6 +319,8 @@ int main()
 		{
 			DXWindow::Get().Update(); // Poll the window, so that it's considered 'responding'
 
+			bool is3D = DXWindow::Get().Is3D();
+
 			// handle resizing
 			if (DXWindow::Get().ShouldResize())
 			{
@@ -328,14 +333,14 @@ int main()
 			DXWindow::Get().BeginFrame(cmdList);
 			
 			// == Pipeline State Object Updates ==
-			cmdList->SetPipelineState(pso);
+			cmdList->SetPipelineState(is3D ? pso : pso2D);
 			cmdList->SetGraphicsRootSignature(rootSignature);
 			cmdList->SetDescriptorHeaps(1, &srvHeap);
 
 			// == Input Assembler Updates ==
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			cmdList->IASetVertexBuffers(0, 1, &vbv2);
-			cmdList->IASetIndexBuffer(&ibv);
+			cmdList->IASetVertexBuffers(0, 1, is3D ? &vbv2 : &vbv);
+			cmdList->IASetIndexBuffer(is3D ? &ibv : nullptr);
 
 			// == Rasterizer Updates ==
 			D3D12_VIEWPORT vp;
@@ -371,8 +376,9 @@ int main()
 			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
 			
 			// Draw
-			// cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0);
-			cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0);
+			is3D ? 
+				cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0) :
+				cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0) ;
 
 			DXWindow::Get().EndFrame(cmdList);
 
@@ -387,10 +393,11 @@ int main()
 		// Flush command queue
 		DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
 
-		// Release Buffers
+		// Release Heap Memory (Buffers)
 		vertexBuffer.Release();
 		uploadBuffer.Release();
 		indexBuffer.Release();
+		vertexBuffer2.Release();
 
 		DXWindow::Get().Shutdown();
 		DXContext::Get().Shutdown();

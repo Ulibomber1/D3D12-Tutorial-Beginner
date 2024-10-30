@@ -1,7 +1,7 @@
 struct VS_Output
 {
-    float2 uv : Texcoord;
     float4 pos : SV_Position;
+    float2 uv : Texcoord;
 };
 
 float3 color : register(b0);

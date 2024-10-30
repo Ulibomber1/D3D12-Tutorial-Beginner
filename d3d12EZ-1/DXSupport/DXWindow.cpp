@@ -342,6 +342,11 @@ LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LP
 		{
 			Get().SetFullscreen(!Get().IsFullscreen());
 		}
+		if (wParam == VK_F1)
+		{
+			bool state = Get().Is3D();
+			Get().m_is3D = !state;
+		}
 		break;
 	case WM_SIZE:
 		// if an lparam containing width and height are given in the message, and neither width or height are the same as before...
