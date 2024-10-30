@@ -348,8 +348,8 @@ int main()
 				vp.TopLeftX = vp.TopLeftY = 0;
 				vp.Width = (FLOAT)DXWindow::Get().GetWidth();
 				vp.Height = (FLOAT)DXWindow::Get().GetHeight();
-				vp.MinDepth = 1.f;
-				vp.MaxDepth = 0.f;
+				vp.MinDepth = 0.f;
+				vp.MaxDepth = 1.f;
 			}
 			cmdList->RSSetViewports(1, &vp);
 			RECT scRect;
@@ -379,6 +379,17 @@ int main()
 			is3D ? 
 				cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0) :
 				cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0) ;
+
+			transformMatrix = XMMatrixTranspose(
+				XMMatrixRotationX(0.2f * time + 0.f) *
+				XMMatrixRotationY(0.4f * time + 1.f) *
+				XMMatrixRotationZ(0.1f * time + 0.f) *
+				viewProjection
+			);
+			cmdList->SetGraphicsRoot32BitConstants(1, sizeof(transformMatrix) / 4, &transformMatrix, 0);
+			is3D ?
+				cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0) :
+				void(); // Do nothing if in 2D
 
 			DXWindow::Get().EndFrame(cmdList);
 

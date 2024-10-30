@@ -247,7 +247,7 @@ void DXWindow::BeginFrame(ID3D12GraphicsCommandList6* cmdlist)
 	cmdlist->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], clearColor, 0, nullptr);
 	float clearDepth = 1.0f;
 	cmdlist->ClearDepthStencilView(m_dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepth, 0, 0, nullptr);
-	// Set CPU descriptor handles for the RTVs
+	// Set CPU descriptor handles for the RTVs and DSV
 	cmdlist->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, &m_dsvHandle);
 }
 
