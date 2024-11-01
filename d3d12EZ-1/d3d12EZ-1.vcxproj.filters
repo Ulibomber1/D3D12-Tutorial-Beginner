@@ -39,6 +39,12 @@
     <ClInclude Include="DXSupport\GPSODescBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DXSupport\DXRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DXSupport\DXDataHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -57,9 +63,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DXSupport\ImageLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DXSupport\dxDescriptorFactory.h">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DXSupport\GPSODescBuilder.cpp">

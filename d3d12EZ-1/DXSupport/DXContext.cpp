@@ -55,7 +55,7 @@ void DXContext::Shutdown()
 --need to research DX12 async conventions and architecture
 --setup a robust architecture for async based on research
 --use the new async functionality
--refactor use of exit() function
+-refactor use of exit() function?
 */
 // Sets a synchronization fence and waits for all workloads behind the fence to finish (kind of like a moving goal post)
 void DXContext::SignalAndWait()
