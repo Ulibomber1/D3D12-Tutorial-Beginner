@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="DXSupport\DXContext.cpp" />
     <ClCompile Include="DXDebug\DXDebugLayer.cpp" />
+    <ClCompile Include="DXSupport\DXDataHandler.cpp" />
     <ClCompile Include="DXSupport\DXWindow.cpp" />
     <ClCompile Include="DXSupport\GPSODescBuilder.cpp" />
     <ClCompile Include="DXSupport\ImageLoader.cpp" />

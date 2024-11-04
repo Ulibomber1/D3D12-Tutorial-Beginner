@@ -80,21 +80,21 @@ int main()
 	DXDebugLayer::Get().Init();
 	if (DXContext::Get().Init() && DXWindow::Get().Init() && DirectX::XMVerifyCPUSupport())
 	{
-		auto* cmdList = DXContext::Get().InitCommandList();
+		auto* cmdList = DXContext::Get().InitCommandList(); // REMOVE?
 
-		// === Heap Descriptors ===
+		// === Heap Descriptors === _REMOVE_
 		D3D12_HEAP_PROPERTIES hpUpload{};
 		initHeapPropsUpload(&hpUpload);
 		D3D12_HEAP_PROPERTIES hpDefault{};
 		initHeapPropsDefault(&hpDefault);
 
-		// === Texture Data ===
+		// === Texture Data === _REFACTOR_
 		ImageLoader::ImageData textureData;
 		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData);
 		uint32_t textureStride = textureData.width * ((textureData.bpp + 7) / 8);
 		uint32_t textureSize = textureData.height * textureStride;
 
-		// === Buffer Descriptors ===
+		// === Buffer Descriptors === _REMOVE_
 		D3D12_RESOURCE_DESC rdu{};
 		initRsrcDescUpload(&rdu, textureSize);
 		D3D12_RESOURCE_DESC rdv{};
@@ -104,20 +104,20 @@ int main()
 		D3D12_RESOURCE_DESC rdv2{};
 		initRsrcDescBuffer(&rdv2, sizeof(verticesCube));
 
-		// === Heap & Buffer Creation ===
+		// === Heap & Buffer Creation === _REFACTOR_
 		ComPointer<ID3D12Resource2> uploadBuffer, vertexBuffer, indexBuffer, vertexBuffer2;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rdu, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdi, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&indexBuffer));
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv2, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&vertexBuffer2));
 
-		// === Texture Description ===
+		// === Texture Description === _REFACTOR_
 		D3D12_RESOURCE_DESC rdt{};
 		initResourceDescTexture(&rdt, &textureData);
 		ComPointer<ID3D12Resource2> texture;
 		DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
 
-		// === SRV Descriptor Heap (for now, just Textures) ===
+		// === SRV Descriptor Heap (for now, just Textures) === _REMOVE_
 		D3D12_DESCRIPTOR_HEAP_DESC dhd{};
 		{
 			dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -128,7 +128,7 @@ int main()
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&srvHeap));
 
-		// === SRV ===
+		// === SRV === _REMOVE_
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
 		{
 			srv.Format = textureData.giPixelFormat;
@@ -141,7 +141,7 @@ int main()
 		}
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
 
-		// === Resource Uploads ===
+		// === Resource Uploads === _REMOVE_
 		// copy void* (Memory) --> CPU resource (Upload Buffer)
 		{
 			char* uploadBufferAddress = nullptr;
@@ -185,7 +185,7 @@ int main()
 		// copy cube vertex data (upload buffer) --> GPU Resource (cube vertex buffer)
 		cmdList->CopyBufferRegion(vertexBuffer2, 0, uploadBuffer, textureSize + sizeof(vertices2D) + sizeof(cubeIndices), sizeof(verticesCube));
 
-		// === Resource Barriers ===
+		// === Resource Barriers === _REMOVE_
 		D3D12_RESOURCE_BARRIER vertBuffBarr; // Vertex Buffer Resource Barrier
 		{
 			vertBuffBarr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION; // Specify the type of resource barrier
@@ -225,7 +225,7 @@ int main()
 		D3D12_RESOURCE_BARRIER barriers[] = { vertBuffBarr, textureBarr, indexBuffBarr, vertBuff2Barr };
 		cmdList->ResourceBarrier(_countof(barriers), barriers);
 
-		// === Execute Resource Uploads ===
+		// === Execute Resource Uploads === _REFACTOR_
 		DXContext::Get().ExecuteCommandList();
 
 		// === Shaders ===
@@ -274,7 +274,7 @@ int main()
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod3D, IID_PPV_ARGS(&pso));
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod2D, IID_PPV_ARGS(&pso2D));
 
-		// === Vertex Buffer View(s) ===
+		// === Vertex Buffer View(s) === _REFACTOR_
 		D3D12_VERTEX_BUFFER_VIEW vbv{};
 		{
 			vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
@@ -288,7 +288,7 @@ int main()
 			vbv2.StrideInBytes = sizeof(VertexCube);
 		}
 
-		// === Index Buffer View ===
+		// === Index Buffer View === _REFACTOR_
 		D3D12_INDEX_BUFFER_VIEW ibv{};
 		{
 			ibv.BufferLocation = indexBuffer->GetGPUVirtualAddress();
@@ -404,7 +404,7 @@ int main()
 		// Flush command queue
 		DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
 
-		// Release Heap Memory (Buffers)
+		// Release Heap Memory (Buffers) _REFACTOR_
 		vertexBuffer.Release();
 		uploadBuffer.Release();
 		indexBuffer.Release();
