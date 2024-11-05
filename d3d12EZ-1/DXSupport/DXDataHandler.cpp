@@ -39,7 +39,7 @@ void DXDataHandler::CreateGPUVertexBuffer(ID3D12Resource2* pVertexBuffer, void* 
 	{
 		rdv.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
 		rdv.Alignment = 0;//D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-		rdv.Width = sizeof(data); // width of the buffer.
+		rdv.Width = dataSize; // width of the buffer.
 		rdv.Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
 		rdv.DepthOrArraySize = 1; // same as previous comment
 		rdv.MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
@@ -56,10 +56,10 @@ void DXDataHandler::CreateGPUVertexBuffer(ID3D12Resource2* pVertexBuffer, void* 
 		vbv.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
 		vbv.SizeInBytes = dataSize;
 		vbv.StrideInBytes = dataStride;
-		typeid(vbv);
 	}
 	m_vbViews.push_back(vbv);
 	m_vbvData.push_back(&data);
+	m_vertexBuffers.push_back(pVertexBuffer);
 	uploadBufferSize += dataSize;
 }
 
@@ -77,7 +77,7 @@ void DXDataHandler::CreateGPUIndexBuffer(ID3D12Resource2* pIndexBuffer, void* da
 	{
 		rdi.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
 		rdi.Alignment = 0;//D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-		rdi.Width = sizeof(data); // width of the buffer.
+		rdi.Width = dataSize; // width of the buffer.
 		rdi.Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
 		rdi.DepthOrArraySize = 1; // same as previous comment
 		rdi.MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
@@ -97,6 +97,7 @@ void DXDataHandler::CreateGPUIndexBuffer(ID3D12Resource2* pIndexBuffer, void* da
 	}
 	m_ibViews.push_back(ibv);
 	m_ibvData.push_back(data);
+	m_indexBuffers.push_back(pIndexBuffer);
 	uploadBufferSize += dataSize;
 }
 
