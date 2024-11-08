@@ -11,21 +11,9 @@ bool DXDataHandler::Init()
 void DXDataHandler::Shutdown()
 {
 	uploadBuffer.Release();
-	for (int i = 0; i < m_textures.size(); i++)
-	{
-		m_textures.at(i)->Release();
-	}
-	for (int i = 0; i < m_vertexBuffers.size(); i++)
-	{
-		m_vertexBuffers.at(i)->Release();
-	}
-	for (int i = 0; i < m_indexBuffers.size(); i++)
-	{
-		m_indexBuffers.at(i)->Release();
-	}
 }
 
-void DXDataHandler::CreateGPUVertexBuffer(ID3D12Resource2* pVertexBuffer, void* data, size_t dataSize, size_t dataStride)
+void DXDataHandler::CreateGPUVertexBuffer(ComPointer<ID3D12Resource2>& pVertexBuffer, D3D12_VERTEX_BUFFER_VIEW* view, void* data, size_t dataSize, size_t dataStride)
 {
 	D3D12_HEAP_PROPERTIES hpDefault{};
 	{
@@ -51,19 +39,18 @@ void DXDataHandler::CreateGPUVertexBuffer(ID3D12Resource2* pVertexBuffer, void* 
 	}
 
 	DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdv, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&pVertexBuffer));
-	D3D12_VERTEX_BUFFER_VIEW vbv{};
-	{
-		vbv.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
-		vbv.SizeInBytes = dataSize;
-		vbv.StrideInBytes = dataStride;
-	}
-	m_vbViews.push_back(vbv);
-	m_vbvData.push_back(&data);
+	
+	view->BufferLocation = 0;
+	view->SizeInBytes = dataSize;
+	view->StrideInBytes = dataStride;
+
+	m_vbViews.push_back(view);
+	m_vbvData.push_back(data);
 	m_vertexBuffers.push_back(pVertexBuffer);
 	uploadBufferSize += dataSize;
 }
 
-void DXDataHandler::CreateGPUIndexBuffer(ID3D12Resource2* pIndexBuffer, void* data, size_t dataSize)
+void DXDataHandler::CreateGPUIndexBuffer(ComPointer<ID3D12Resource2>& pIndexBuffer, D3D12_INDEX_BUFFER_VIEW* view, void* data, size_t dataSize)
 {
 	D3D12_HEAP_PROPERTIES hpDefault{};
 	{
@@ -89,19 +76,18 @@ void DXDataHandler::CreateGPUIndexBuffer(ID3D12Resource2* pIndexBuffer, void* da
 	}
 
 	DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdi, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&pIndexBuffer));
-	D3D12_INDEX_BUFFER_VIEW ibv{};
-	{
-		ibv.BufferLocation = pIndexBuffer->GetGPUVirtualAddress();
-		ibv.SizeInBytes = dataSize;
-		ibv.Format = DXGI_FORMAT_R16_UINT; // Find out how to generalize format
-	}
-	m_ibViews.push_back(ibv);
+	
+	view->BufferLocation = 0;
+	view->SizeInBytes = dataSize;
+	view->Format = DXGI_FORMAT_R16_UINT; // Find out how to generalize format
+
+	m_ibViews.push_back(view);
 	m_ibvData.push_back(data);
 	m_indexBuffers.push_back(pIndexBuffer);
 	uploadBufferSize += dataSize;
 }
 
-void DXDataHandler::CreateGPUTexture(ID3D12Resource2* texture, ImageLoader::ImageData* pTxtrData)
+void DXDataHandler::CreateGPUTexture(ComPointer<ID3D12Resource2>& pTexture, ComPointer<ID3D12DescriptorHeap>& srvHeap, ImageLoader::ImageData* pTxtrData)
 {
 	D3D12_HEAP_PROPERTIES hpDefault{};
 	{
@@ -125,8 +111,7 @@ void DXDataHandler::CreateGPUTexture(ID3D12Resource2* texture, ImageLoader::Imag
 		rdt.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // define the layout.
 		rdt.Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 	}
-	DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture));
-	
+	DXContext::Get().GetDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&pTexture));
 	D3D12_DESCRIPTOR_HEAP_DESC dhd{};
 	{
 		dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -134,7 +119,6 @@ void DXDataHandler::CreateGPUTexture(ID3D12Resource2* texture, ImageLoader::Imag
 		dhd.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		dhd.NodeMask = 0;
 	}
-	ComPointer<ID3D12DescriptorHeap> srvHeap;
 	DXContext::Get().GetDevice()->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&srvHeap));
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -147,34 +131,14 @@ void DXDataHandler::CreateGPUTexture(ID3D12Resource2* texture, ImageLoader::Imag
 		srv.Texture2D.PlaneSlice = 0;
 		srv.Texture2D.ResourceMinLODClamp = 0.0f;
 	}
-	DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
+	DXContext::Get().GetDevice()->CreateShaderResourceView(pTexture, &srv, srvHeap->GetCPUDescriptorHandleForHeapStart());
+	
 	m_srvHeaps.push_back(srvHeap);
+	m_textures.push_back(pTexture);
+	m_txtrData.push_back(pTxtrData);
 
 	uint32_t textureStride = pTxtrData->width * ((pTxtrData->bpp + 7) / 8);
 	uint32_t textureSize = pTxtrData->height * textureStride;
-	D3D12_BOX textureSizeAsBox;
-	D3D12_TEXTURE_COPY_LOCATION txtcSrc, txtcDst;
-	{
-		textureSizeAsBox.left = textureSizeAsBox.top = textureSizeAsBox.front = 0;
-		textureSizeAsBox.right = pTxtrData->width;
-		textureSizeAsBox.bottom = pTxtrData->height;
-		textureSizeAsBox.back = 1;
-
-		txtcSrc.pResource = uploadBuffer;
-		txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		txtcSrc.PlacedFootprint.Offset = 0;
-		txtcSrc.PlacedFootprint.Footprint.Width = pTxtrData->width;
-		txtcSrc.PlacedFootprint.Footprint.Height = pTxtrData->height;
-		txtcSrc.PlacedFootprint.Footprint.Depth = 1;
-		txtcSrc.PlacedFootprint.Footprint.RowPitch = textureStride;
-		txtcSrc.PlacedFootprint.Footprint.Format = pTxtrData->giPixelFormat;
-
-		txtcDst.pResource = texture;
-		txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-		txtcDst.PlacedFootprint.Offset = 0;
-	}
-	m_textures.push_back(texture);
-	m_txtrData.push_back(pTxtrData);
 	uploadBufferSize += textureSize;
 }
 
@@ -209,16 +173,43 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 	D3D12_RANGE uploadRange;
 	uploadRange.Begin = 0;
 	uploadRange.End = rdu.Width;
+
+	// Copy data to CPU memory (upload buffer)
 	uploadBuffer->Map(0, &uploadRange, (void**)&uploadBufferAddress);
-
-	int j = 0;
-	std::vector<D3D12_RESOURCE_BARRIER> barrierVec;
-
+	int uplBuffOffset = 0;
 	for (int i = 0; i < m_txtrData.size(); i++)
 	{
 		auto* pTextureData = m_txtrData.at(i);
-		auto* pTexture = m_textures.at(i);
 
+		uint32_t textureStride = pTextureData->width * ((pTextureData->bpp + 7) / 8);
+		uint32_t textureSize = pTextureData->height * textureStride;
+		memcpy(&uploadBufferAddress[uplBuffOffset], pTextureData->data.data(), textureSize);
+		uplBuffOffset += textureSize;
+	}
+	for (int i = 0; i < m_vbvData.size(); i++)
+	{
+		size_t vbSize = m_vbViews.at(i)->SizeInBytes;
+		auto* pVertexData = m_vbvData.at(i);
+
+		memcpy(&uploadBufferAddress[uplBuffOffset], pVertexData, vbSize);
+		uplBuffOffset += vbSize;
+	}
+	for (int i = 0; i < m_ibvData.size(); i++)
+	{
+		size_t ibSize = m_ibViews.at(i)->SizeInBytes;
+		auto* pIndexData = m_ibvData.at(i);
+
+		memcpy(&uploadBufferAddress[uplBuffOffset], pIndexData, ibSize);
+		uplBuffOffset += ibSize;
+	}
+	uploadBuffer->Unmap(0, &uploadRange);
+
+	// Upload data to GPU memory (respective buffers/heaps)
+	uplBuffOffset = 0;
+	for (int i = 0; i < m_textures.size(); i++)
+	{
+		auto* pTextureData = m_txtrData.at(i);
+		auto* pTexture = m_textures.at(i);
 		uint32_t textureStride = pTextureData->width * ((pTextureData->bpp + 7) / 8);
 		uint32_t textureSize = pTextureData->height * textureStride;
 		D3D12_BOX textureSizeAsBox;
@@ -229,9 +220,9 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 			textureSizeAsBox.bottom = pTextureData->height;
 			textureSizeAsBox.back = 1;
 
-			txtcSrc.pResource = uploadBuffer;
+			txtcSrc.pResource = uploadBuffer; 
 			txtcSrc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-			txtcSrc.PlacedFootprint.Offset = 0;
+			txtcSrc.PlacedFootprint.Offset = uplBuffOffset;
 			txtcSrc.PlacedFootprint.Footprint.Width = pTextureData->width;
 			txtcSrc.PlacedFootprint.Footprint.Height = pTextureData->height;
 			txtcSrc.PlacedFootprint.Footprint.Depth = 1;
@@ -242,9 +233,7 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 			txtcDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 			txtcDst.PlacedFootprint.Offset = 0;
 		}
-		memcpy(&uploadBufferAddress[j], pTextureData->data.data(), textureSize);
 		cmdList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
-		j += textureSize;
 
 		D3D12_RESOURCE_BARRIER textureBarr; // Texture Resource Barrier
 		{
@@ -256,18 +245,14 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 			textureBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE; // ...and the state after
 		}
 		barrierVec.push_back(textureBarr);
+
+		uplBuffOffset += textureSize;
 	}
-
-	for (int i = 0; i < m_vbvData.size(); i++)
+	for (int i = 0; i < m_vertexBuffers.size(); i++)
 	{
-		size_t vbSize = m_vbViews.at(i).SizeInBytes;
-		auto* pVertexData = m_vbvData.at(i);
-		auto* pVertexBuffer = m_vertexBuffers.at(i);
-
-		memcpy(&uploadBufferAddress[j], pVertexData, vbSize);
-		// copy vertex data (Upload Buffer) --> GPU resource (Vertex Buffer)
-		cmdList->CopyBufferRegion(pVertexBuffer, 0, uploadBuffer, j, vbSize);
-		j += vbSize;
+		size_t vbSize = m_vbViews.at(i)->SizeInBytes;
+		ID3D12Resource2* pVertexBuffer = m_vertexBuffers.at(i);
+		cmdList->CopyBufferRegion(pVertexBuffer, 0, uploadBuffer, uplBuffOffset, vbSize);
 
 		D3D12_RESOURCE_BARRIER vertBuffBarr; // Vertex Buffer Resource Barrier
 		{
@@ -279,18 +264,14 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 			vertBuffBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; // ...and the state after
 		}
 		barrierVec.push_back(vertBuffBarr);
+
+		uplBuffOffset += vbSize;
 	}
-
-	for (int i = 0; i < m_ibvData.size(); i++)
+	for (int i = 0; i < m_indexBuffers.size(); i++)
 	{
-		size_t ibSize = m_ibViews.at(i).SizeInBytes;
-		auto* pIndexData = m_ibvData.at(i);
+		size_t ibSize = m_ibViews.at(i)->SizeInBytes;
 		auto* pIndexBuffer = m_indexBuffers.at(i);
-
-		memcpy(&uploadBufferAddress[j], pIndexData, ibSize);
-		// copy Index data (Upload Buffer) --> GPU resource (Index Buffer)
-		cmdList->CopyBufferRegion(pIndexBuffer, 0, uploadBuffer, j, ibSize);
-		j += ibSize;
+		cmdList->CopyBufferRegion(pIndexBuffer, 0, uploadBuffer, uplBuffOffset, ibSize);
 
 		D3D12_RESOURCE_BARRIER indexBuffBarr; //Index Resource Barrier
 		{
@@ -302,10 +283,21 @@ void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
 			indexBuffBarr.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE; // ...and the state after
 		}
 		barrierVec.push_back(indexBuffBarr);
+
+		uplBuffOffset += ibSize;
 	}
-	uploadBuffer->Unmap(0, &uploadRange);
 
 	cmdList->ResourceBarrier(barrierVec.size(), &barrierVec[0]);
 	DXContext::Get().ExecuteCommandList();
 	uploadBufferSize = 0; // May not be needed
+
+	// Complete Views (obtain GPU virtual addresses)
+	for (int i = 0; i < m_vbViews.size(); i++)
+	{
+		m_vbViews.at(i)->BufferLocation = m_vertexBuffers.at(i)->GetGPUVirtualAddress();
+	}
+	for (int i = 0; i < m_ibViews.size(); i++)
+	{
+		m_ibViews.at(i)->BufferLocation = m_indexBuffers.at(i)->GetGPUVirtualAddress();
+	}
 }
