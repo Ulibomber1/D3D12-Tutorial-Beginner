@@ -15,15 +15,7 @@
 
 using namespace DirectX;
 
-void initHeapPropsUpload(D3D12_HEAP_PROPERTIES*);
-void initHeapPropsDefault(D3D12_HEAP_PROPERTIES*);
-void initRsrcDescUpload(D3D12_RESOURCE_DESC*, uint32_t);
-void initRsrcDescBuffer(D3D12_RESOURCE_DESC*, uint32_t);
 void uncrnVomit(float* color, float delta);
-void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData);
-
-
-
 
 // === 2D Vertex Data ===
 struct Vertex2D
@@ -87,14 +79,19 @@ int main()
 		ImageLoader::ImageData textureData;
 		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData); 
 		ComPointer<ID3D12Resource2> texture;
-		DXDataHandler::Get().CreateGPUTexture(texture, &textureData);
+		ComPointer<ID3D12DescriptorHeap> srvHeap;
+		DXDataHandler::Get().CreateGPUTexture(texture, srvHeap, &textureData); // srvHeap,
 
-		// === Buffer Creation ===
-		ComPointer<ID3D12Resource2> vertexBuffer, nullIndexBuffer, vertexBuffer2, indexBuffer;
-		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer, vertices2D, sizeof(vertices2D), sizeof(Vertex2D));
-		//DXDataHandler::Get().CreateGPUIndexBuffer(nullIndexBuffer, nullptr, 0);
-		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer2, verticesCube, sizeof(verticesCube), sizeof(VertexCube));
-		DXDataHandler::Get().CreateGPUIndexBuffer(indexBuffer, cubeIndices, sizeof(cubeIndices));
+
+		// === Buffer and View Creation ===
+		ComPointer<ID3D12Resource2> vertexBuffer, vertexBuffer2;
+		D3D12_VERTEX_BUFFER_VIEW vbv{}, vbv2{};
+		ComPointer<ID3D12Resource2> indexBuffer;
+		D3D12_INDEX_BUFFER_VIEW ibv{};
+		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer, &vbv, &vertices2D, sizeof(vertices2D), sizeof(Vertex2D));
+		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer2, &vbv2, &verticesCube, sizeof(verticesCube), sizeof(VertexCube));
+		DXDataHandler::Get().CreateGPUIndexBuffer(indexBuffer, &ibv, &cubeIndices, sizeof(cubeIndices));
+		//vertexBuffer = DXDataHandler::Get().GetVertexBuffers().at(0);
 
 		// === Execute Resource Uploads === 
 		DXDataHandler::Get().ExecuteUploadToGPU();
@@ -129,7 +126,11 @@ int main()
 		ComPointer<ID3DBlob> rootSigBlob;
 		ComPointer<ID3DBlob> errorBlob;
 		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rootSigBlob, &errorBlob);
-		if (FAILED(hr)) { std::cout << "Root Signature did not compile!"; return -2; }
+		if (FAILED(hr)) 
+		{ 
+			std::cout << "Root Signature did not compile!"; 
+			return -2; 
+		}
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 
 		// === Pipeline State Object Description ===
@@ -145,15 +146,6 @@ int main()
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod3D, IID_PPV_ARGS(&pso));
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod2D, IID_PPV_ARGS(&pso2D));
 
-		// === SRV Descriptor Heap ===
-		ComPointer<ID3D12DescriptorHeap> srvHeap = DXDataHandler::Get().GetSRVHeaps()[0];
-
-		// === Vertex Buffer View(s) ===
-		D3D12_VERTEX_BUFFER_VIEW vbv = DXDataHandler::Get().GetVBVs()[0];
-		D3D12_VERTEX_BUFFER_VIEW vbv2 = DXDataHandler::Get().GetVBVs()[1];
-		
-		// === Index Buffer View ===
-		D3D12_INDEX_BUFFER_VIEW ibv = DXDataHandler::Get().GetIBVs()[0];
 		
 		// === View and Projection Matrix ===
 		XMMATRIX viewProjection;
@@ -171,7 +163,7 @@ int main()
 		}
 
 		// === RENDER LOOP ===
-		auto* cmdList = DXContext::Get().InitCommandList();
+		ID3D12GraphicsCommandList6* cmdList;
 		float time = 0.f;
 		const float timeStep = 0.005f;
 		DXWindow::Get().SetFullscreen(true);
@@ -273,51 +265,6 @@ int main()
 	DXDebugLayer::Get().Shutdown();
 }
 
-// Replace these with cd3dx12 helpers
-void initHeapPropsUpload(D3D12_HEAP_PROPERTIES* heapProps)
-{
-	heapProps->Type = D3D12_HEAP_TYPE_UPLOAD; // What type of heap this is is. We specify one that uploads to the GPU
-	heapProps->MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred 
-	heapProps->CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory
-	heapProps->CreationNodeMask = 0; // Which GPU the heap shall be stored. We choose the first one.
-	heapProps->VisibleNodeMask = 0; // Where the memory can be seen from
-}
-void initHeapPropsDefault(D3D12_HEAP_PROPERTIES* heapProps)
-{
-	heapProps->Type = D3D12_HEAP_TYPE_DEFAULT; // What type of heap this is is. We specify one is default
-	heapProps->MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN; // Which memory pool (RAM or vRAM) is preferred.
-	heapProps->CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN; // Specifies how the GPU can access the memory.
-	heapProps->CreationNodeMask = 0; // Which GPU the heap shall be stored. We choose the first one.
-	heapProps->VisibleNodeMask = 0; // Where the memory can be seen from.
-}
-void initRsrcDescUpload(D3D12_RESOURCE_DESC* rscDesc, uint32_t imgSize)
-{
-	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
-	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	rscDesc->Width = 16384 + imgSize; // width of the buffer. 16384 is an arbitrary bit width since this is a general read buffer
-	rscDesc->Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
-	rscDesc->DepthOrArraySize = 1; // same as previous comment
-	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
-	rscDesc->Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
-	rscDesc->SampleDesc.Count = 1; // the amount of samples
-	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
-	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
-	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
-}
-void initRsrcDescBuffer(D3D12_RESOURCE_DESC* rscDesc, uint32_t bufferWidth)
-{
-	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_BUFFER; // how many dimensions this resource has
-	rscDesc->Alignment = 0;//D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-	rscDesc->Width = bufferWidth; // width of the buffer.
-	rscDesc->Height = 1; // if this were a higher dimension resource, this would likely be larger than 1
-	rscDesc->DepthOrArraySize = 1; // same as previous comment
-	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
-	rscDesc->Format = DXGI_FORMAT_UNKNOWN; // Specifies what type of byte format to use
-	rscDesc->SampleDesc.Count = 1; // the amount of samples
-	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
-	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
-	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
-}
 void uncrnVomit(float* color, float delta)
 {
 	static int pukeState = 0;
@@ -352,18 +299,4 @@ void uncrnVomit(float* color, float delta)
 			pukeState = 0;
 		}
 	}
-}
-void initResourceDescTexture(D3D12_RESOURCE_DESC* rscDesc, ImageLoader::ImageData* txtrData)
-{
-	rscDesc->Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; // how many dimensions this resource has
-	rscDesc->Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // 
-	rscDesc->Width = txtrData->width; // width of the buffer. 1024 is an arbitrary bit width
-	rscDesc->Height = txtrData->height; // if this were a higher dimension resource, this would likely be larger than 1
-	rscDesc->DepthOrArraySize = 1; // same as previous comment
-	rscDesc->MipLevels = 1; // specify which level of mipmapping to use (1 means no mipmapping)
-	rscDesc->Format = txtrData->giPixelFormat; // Specifies what type of byte format to use
-	rscDesc->SampleDesc.Count = 1; // the amount of samples
-	rscDesc->SampleDesc.Quality = 0; // the quality of the anti aliasing (0 means off)
-	rscDesc->Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; // define the texture layout. Other values will mess with the order of our buffer, so we choose row major (in order)
-	rscDesc->Flags = D3D12_RESOURCE_FLAG_NONE; // specify various other options related to access and usage
 }
