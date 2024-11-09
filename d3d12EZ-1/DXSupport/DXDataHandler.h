@@ -5,7 +5,6 @@
 #include <DXSupport/ImageLoader.h>
 #include <DXSupport/DXContext.h>
 
-
 /* TODO:
 * - change void pointers to templates or union types
 */

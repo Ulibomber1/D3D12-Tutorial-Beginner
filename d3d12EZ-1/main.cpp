@@ -71,7 +71,7 @@ D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
 int main()
 {
 	DXDebugLayer::Get().Init();
-	if (DXContext::Get().Init() && DXWindow::Get().Init() && DirectX::XMVerifyCPUSupport())
+	if (DXContext::Get().Init() && DXWindow::Get().Init() && XMVerifyCPUSupport())
 	{
 		if (!DXDataHandler::Get().Init()) std::cout << "Failure to initialize data handler!";
 
@@ -82,7 +82,6 @@ int main()
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXDataHandler::Get().CreateGPUTexture(texture, srvHeap, &textureData); // srvHeap,
 
-
 		// === Buffer and View Creation ===
 		ComPointer<ID3D12Resource2> vertexBuffer, vertexBuffer2;
 		D3D12_VERTEX_BUFFER_VIEW vbv{}, vbv2{};
@@ -91,7 +90,6 @@ int main()
 		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer, &vbv, &vertices2D, sizeof(vertices2D), sizeof(Vertex2D));
 		DXDataHandler::Get().CreateGPUVertexBuffer(vertexBuffer2, &vbv2, &verticesCube, sizeof(verticesCube), sizeof(VertexCube));
 		DXDataHandler::Get().CreateGPUIndexBuffer(indexBuffer, &ibv, &cubeIndices, sizeof(cubeIndices));
-		//vertexBuffer = DXDataHandler::Get().GetVertexBuffers().at(0);
 
 		// === Execute Resource Uploads === 
 		DXDataHandler::Get().ExecuteUploadToGPU();
@@ -146,7 +144,6 @@ int main()
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod3D, IID_PPV_ARGS(&pso));
 		DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&gfxPsod2D, IID_PPV_ARGS(&pso2D));
 
-		
 		// === View and Projection Matrix ===
 		XMMATRIX viewProjection;
 		{
