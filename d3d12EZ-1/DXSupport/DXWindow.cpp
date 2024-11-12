@@ -137,7 +137,7 @@ void DXWindow::Update()
 // presents the current buffer, only whilst the buffer is in present state
 void DXWindow::Present()
 {
-	m_swapChain->Present(1, 0);
+	m_swapChain->Present(0, 0);
 }
 
 // clean shutdown of the DX components of the window and the window itself

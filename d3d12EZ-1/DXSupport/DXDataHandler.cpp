@@ -142,7 +142,7 @@ void DXDataHandler::CreateGPUTexture(ComPointer<ID3D12Resource2>& pTexture, ComP
 	uploadBufferSize += textureSize;
 }
 
-void DXDataHandler::ExecuteUploadToGPU() // Needs Verification
+void DXDataHandler::ExecuteUploadToGPU() 
 {
 	uploadBuffer.Release(); // May not be needed
 	D3D12_HEAP_PROPERTIES hpUpload{};

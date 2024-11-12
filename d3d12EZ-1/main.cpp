@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h> 
+#include <chrono>
 
 #include <WinSupport/WinInclude.h>
 #include <WinSupport/ComPointer.h>
@@ -77,7 +78,7 @@ int main()
 
 		// === Texture Data ===
 		ImageLoader::ImageData textureData;
-		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData); 
+		ImageLoader::LoadImageFromDisk("./auge_512_512_BGRA_32BPP.png", textureData);
 		ComPointer<ID3D12Resource2> texture;
 		ComPointer<ID3D12DescriptorHeap> srvHeap;
 		DXDataHandler::Get().CreateGPUTexture(texture, srvHeap, &textureData); // srvHeap,
@@ -124,10 +125,10 @@ int main()
 		ComPointer<ID3DBlob> rootSigBlob;
 		ComPointer<ID3DBlob> errorBlob;
 		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rootSigBlob, &errorBlob);
-		if (FAILED(hr)) 
-		{ 
-			std::cout << "Root Signature did not compile!"; 
-			return -2; 
+		if (FAILED(hr))
+		{
+			std::cout << "Root Signature did not compile!";
+			return -2;
 		}
 		DXContext::Get().GetDevice()->CreateRootSignature(0, rootSigBlob->GetBufferPointer(), rootSigBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 
@@ -159,19 +160,27 @@ int main()
 			viewProjection = viewMtx * projectionMtx;
 		}
 
+		// === TIMING INIT ===
+		std::chrono::steady_clock::time_point startRenderTime_nS;
+		std::chrono::steady_clock::time_point endRenderTime_nS;
+		std::chrono::duration<double> renderDurationSecs;
+		double timeAccumulatedSecs = 0.0;
+		float animTime = 0.f;
+		float animStep = 0.005f;
+		int frames = 0;
+		
 		// === RENDER LOOP ===
 		ID3D12GraphicsCommandList6* cmdList;
-		float time = 0.f;
-		const float timeStep = 0.005f;
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
-			DXWindow::Get().Update(); // Poll the window, so that it's considered 'responding'
+			// == Timed Updates (start) ==
+			startRenderTime_nS = std::chrono::steady_clock::now();
 
+			// == Poll Events ==
+			DXWindow::Get().Update(); // Poll the window events, so that it's considered 'responding'
 			bool is3D = DXWindow::Get().Is3D();
-
-			// handle resizing
-			if (DXWindow::Get().ShouldResize())
+			if (DXWindow::Get().ShouldResize())// handle resizing
 			{
 				DXContext::Get().Flush(DXWindow::Get().GetFrameCount()); // Flush Command queue 
 				DXWindow::Get().Resize();
@@ -180,7 +189,7 @@ int main()
 			// begin drawing
 			cmdList = DXContext::Get().InitCommandList();
 			DXWindow::Get().BeginFrame(cmdList);
-			
+
 			// == Pipeline State Object Updates ==
 			cmdList->SetPipelineState(is3D ? pso : pso2D);
 			cmdList->SetGraphicsRootSignature(rootSignature);
@@ -213,26 +222,26 @@ int main()
 			static float color[] = { 0.0f, 0.0f, 1.0f };
 			uncrnVomit(color, 0.0025f);
 			XMMATRIX transformMatrix = XMMatrixTranspose(
-				XMMatrixRotationX(2.0f * time + 0.f) *
-				XMMatrixRotationY(4.0f * time + 5.f) *
-				XMMatrixRotationZ(1.0f * time + 0.f) * 
+				XMMatrixRotationX(2.0f * animTime + 0.f) *
+				XMMatrixRotationY(4.0f * animTime + 5.f) *
+				XMMatrixRotationZ(1.0f * animTime + 0.f) *
 				viewProjection
 			);
-			
+
 			// == Root Sig Updates ==
 			cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 			cmdList->SetGraphicsRoot32BitConstants(1, sizeof(transformMatrix) / 4, &transformMatrix, 0);
 			cmdList->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
-			
-			// Draw
-			is3D ? 
+
+			// == Draw == This might be where to refactor for DXRenderer
+			is3D ?
 				cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0) :
-				cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0) ;
+				cmdList->DrawInstanced(_countof(vertices2D), 1, 0, 0);
 
 			transformMatrix = XMMatrixTranspose(
-				XMMatrixRotationX(0.2f * time + 0.f) *
-				XMMatrixRotationY(0.4f * time + 1.f) *
-				XMMatrixRotationZ(0.1f * time + 0.f) *
+				XMMatrixRotationX(0.2f * animTime + 0.f) *
+				XMMatrixRotationY(0.4f * animTime + 1.f) *
+				XMMatrixRotationZ(0.1f * animTime + 0.f) *
 				viewProjection
 			);
 			cmdList->SetGraphicsRoot32BitConstants(1, sizeof(transformMatrix) / 4, &transformMatrix, 0);
@@ -246,10 +255,20 @@ int main()
 			DXContext::Get().ExecuteCommandList();
 			DXWindow::Get().Present();
 
-			// == Timed Updates ==
-			time += timeStep;
+			// == Timed Updates (end of frame) ==
+			endRenderTime_nS = std::chrono::steady_clock::now();
+			renderDurationSecs = std::chrono::duration_cast<std::chrono::duration<double>>(endRenderTime_nS - startRenderTime_nS);
+			timeAccumulatedSecs += renderDurationSecs.count();
+			frames++;
+			animTime += renderDurationSecs.count();
+			if (timeAccumulatedSecs > 1.0)
+			{
+				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000) / frames << " ms(?)\n";
+				std::cout << "APPROX. FPS: " << frames / timeAccumulatedSecs << "\n\n";
+				frames = 0;
+				timeAccumulatedSecs = 0;
+			}
 		}
-
 		// Flush command queue
 		DXContext::Get().Flush(DXWindow::Get().GetFrameCount());
 
