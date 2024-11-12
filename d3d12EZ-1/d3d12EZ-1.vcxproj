@@ -145,6 +145,13 @@
     <ClCompile Include="DXSupport\GPSODescBuilder.cpp" />
     <ClCompile Include="DXSupport\ImageLoader.cpp" />
     <ClCompile Include="DXSupport\Shader.cpp" />
+    <ClCompile Include="imgui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +160,14 @@
     <ClInclude Include="DXSupport\GPSODescBuilder.h" />
     <ClInclude Include="DXSupport\ImageLoader.h" />
     <ClInclude Include="DXSupport\Shader.h" />
+    <ClInclude Include="imgui\imgui_impl_dx12.h" />
+    <ClInclude Include="imgui\imgui_impl_win32.h" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="WinSupport\ComPointer.h" />
     <ClInclude Include="DXSupport\DXContext.h" />
     <ClInclude Include="DXDebug\DXDebugLayer.h" />
@@ -206,8 +221,12 @@
     <Image Include="app\auge_512_512_BGRA_32BPP.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="imgui\misc\debuggers\imgui.natstepfilter" />
     <None Include="packages.config" />
     <None Include="Shaders\Pipeline.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="imgui\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
