@@ -4,6 +4,8 @@
 #include <WinSupport/ComPointer.h>
 #include <DXSupport/DXContext.h>
 
+#include <imgui/imgui_impl_win32.h>
+
 class DXWindow
 {
 public:
@@ -44,6 +46,10 @@ public:
 		return m_height;
 	}
 
+	inline HWND GetWindow() const 
+	{
+		return m_window;
+	}
 
 	static constexpr size_t FrameCount = 2;
 	static constexpr size_t GetFrameCount()
@@ -51,6 +57,10 @@ public:
 		return FrameCount;
 	}
 
+	inline DXGI_FORMAT GetBufferFormat() const
+	{
+		return m_format;
+	}
 private:
 	bool GetBuffers();
 	void ReleaseBuffers();
@@ -70,6 +80,7 @@ private:
 	ComPointer<IDXGISwapChain3> m_swapChain;
 	ComPointer<ID3D12Resource2> m_buffers[FrameCount];
 	size_t m_currentBufferIndex = 0;
+	DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
 
 	ComPointer<ID3D12DescriptorHeap> m_rtvDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount] = {};

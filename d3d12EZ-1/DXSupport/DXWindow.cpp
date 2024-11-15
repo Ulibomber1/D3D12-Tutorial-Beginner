@@ -65,7 +65,7 @@ bool DXWindow::Init()
 	swd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // Define what swap behavior is used
 	swd.AlphaMode = DXGI_ALPHA_MODE_IGNORE; // Defines the type of alpha blending that is used
 	swd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING; // Extra option flags; here we allow mode switching and screen tearing
-
+	m_format = swd.Format;
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC sfd{};
 	sfd.Windowed = true; // Specify that the window is not fullscreen 
 
@@ -335,6 +335,10 @@ void DXWindow::ReleaseBuffers()
 // handles the processes for different window messages
 LRESULT CALLBACK DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	if (ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam))
+		return true;
+
 	switch (msg)
 	{
 	case WM_KEYDOWN:

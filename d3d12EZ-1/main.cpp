@@ -2,6 +2,10 @@
 #include <math.h> 
 #include <chrono>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_win32.h>
+#include <imgui/imgui_impl_dx12.h>
+
 #include <WinSupport/WinInclude.h>
 #include <WinSupport/ComPointer.h>
 #include <DXSupport/ImageLoader.h>
@@ -75,6 +79,29 @@ int main()
 	if (DXContext::Get().Init() && DXWindow::Get().Init() && XMVerifyCPUSupport())
 	{
 		if (!DXDataHandler::Get().Init()) std::cout << "Failure to initialize data handler!";
+
+		// === ImGui Context ===
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+		// === ImGui Backends ===
+		ImGui_ImplWin32_Init(DXWindow::Get().GetWindow());
+		D3D12_DESCRIPTOR_HEAP_DESC imguiDHDesc;
+		{
+			imguiDHDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			imguiDHDesc.NumDescriptors = 1;
+			imguiDHDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			imguiDHDesc.NodeMask = 0;
+		}
+		ComPointer<ID3D12DescriptorHeap> imguiDescHeap;
+		DXContext::Get().GetDevice()->CreateDescriptorHeap(&imguiDHDesc, IID_PPV_ARGS(&imguiDescHeap));
+		ImGui_ImplDX12_Init(DXContext::Get().GetDevice(), DXWindow::Get().GetFrameCount(), DXWindow::Get().GetBufferFormat(), 
+			imguiDescHeap, 
+			imguiDescHeap->GetCPUDescriptorHandleForHeapStart(), 
+			imguiDescHeap->GetGPUDescriptorHandleForHeapStart());
 
 		// === Texture Data ===
 		ImageLoader::ImageData textureData;
@@ -186,6 +213,12 @@ int main()
 				DXWindow::Get().Resize();
 			}
 
+			// == Start ImGui Frame ==
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+			//ImGui::ShowDemoWindow();
+
 			// begin drawing
 			cmdList = DXContext::Get().InitCommandList();
 			DXWindow::Get().BeginFrame(cmdList);
@@ -249,9 +282,12 @@ int main()
 				cmdList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0) :
 				void(); // Do nothing if in 2D
 
-			DXWindow::Get().EndFrame(cmdList);
+			// Render ImGui
+			ImGui::Render();
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmdList);
 
 			// Finish and Show the render
+			DXWindow::Get().EndFrame(cmdList); // set resource barrier for (current?) render target
 			DXContext::Get().ExecuteCommandList();
 			DXWindow::Get().Present();
 
@@ -263,7 +299,7 @@ int main()
 			animTime += renderDurationSecs.count();
 			if (timeAccumulatedSecs > 1.0)
 			{
-				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000) / frames << " ms(?)\n";
+				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000.0) / frames << " ms(?)\n";
 				std::cout << "APPROX. FPS: " << frames / timeAccumulatedSecs << "\n\n";
 				frames = 0;
 				timeAccumulatedSecs = 0;
@@ -275,6 +311,9 @@ int main()
 		// Release Heap Memory (Buffers)
 		DXDataHandler::Get().Shutdown();
 
+		ImGui_ImplDX12_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
 		DXWindow::Get().Shutdown();
 		DXContext::Get().Shutdown();
 	}
