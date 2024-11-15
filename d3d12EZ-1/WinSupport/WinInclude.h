@@ -9,6 +9,8 @@
 #include <DirectXMath.h> 
 #include <d3dx12.h>
 #include <d3dx12_root_signature.h>
+#include <Model.h> // Model Drawing from .cmo, .vbo, .sdkmesh files (DirectX12TK)
+
 
 #ifdef _DEBUG // Include debug layer headers, if this is a debug build
 #include <d3d12sdklayers.h>
