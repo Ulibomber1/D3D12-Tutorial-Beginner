@@ -288,8 +288,8 @@ int main()
 
 			// Finish and Show the render
 			DXWindow::Get().EndFrame(cmdList); // set resource barrier for (current?) render target
-			DXContext::Get().ExecuteCommandList();
-			DXWindow::Get().Present();
+			DXContext::Get().ExecuteCommandList(); // Execute cmdList, which is a cpu-thread-blocking function (the GPU command thread, via command allocator?)
+			DXWindow::Get().Present(); // Present the last drawn frame that isn't discarded, possibly gpu-thread-blocking (via command queue)
 
 			// == Timed Updates (end of frame) ==
 			endRenderTime_nS = std::chrono::steady_clock::now();

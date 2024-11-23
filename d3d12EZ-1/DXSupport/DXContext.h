@@ -44,7 +44,7 @@ private:
 
 	ComPointer<ID3D12Fence1> m_fence;
 	UINT64 m_fenceValue = 0;
-	HANDLE m_fenceEvent = nullptr;
+	HANDLE m_fenceEvent = nullptr; // thread handle for the fence event
 
 	// Singleton
 public:
