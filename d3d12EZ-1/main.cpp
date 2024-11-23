@@ -299,7 +299,8 @@ int main()
 			animTime += renderDurationSecs.count();
 			if (timeAccumulatedSecs > 1.0)
 			{
-				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000.0) / frames << " ms(?)\n";
+				// Only accurate if WaitForSingleObject() on the fence event blocks the cpu thread
+				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000.0) / frames << " ms\n"; 
 				std::cout << "APPROX. FPS: " << frames / timeAccumulatedSecs << "\n\n";
 				frames = 0;
 				timeAccumulatedSecs = 0;
