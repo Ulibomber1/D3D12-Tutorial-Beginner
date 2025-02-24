@@ -133,6 +133,7 @@
     <None Include="Shaders\Pipeline.hlsli" />
     <None Include="packages.config" />
     <None Include="imgui\misc\debuggers\imgui.natstepfilter" />
+    <None Include="app\SDKMESH\meshconvert.exe" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\misc\debuggers\imgui.natvis" />

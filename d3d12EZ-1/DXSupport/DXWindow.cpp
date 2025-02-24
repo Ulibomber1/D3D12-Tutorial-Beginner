@@ -56,7 +56,7 @@ bool DXWindow::Init()
 	swd.Width = 1920;
 	swd.Height = 1080;
 	swd.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA format and bit depth
-	swd.Stereo = false; // enables stereo video output, which allows for 3D glasses to be used
+	swd.Stereo = false; // enables stereo video output, which allows for 3D glasses or other HMDs to be used
 	swd.SampleDesc.Count = 1; // How many pixels per actual pixel
 	swd.SampleDesc.Quality = 0; // Antialiasing quality (0 means off)
 	swd.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT; // Defines how the buffer is used; which buffer is drawn to, and whether it's drawn by CPU or GPU(?)

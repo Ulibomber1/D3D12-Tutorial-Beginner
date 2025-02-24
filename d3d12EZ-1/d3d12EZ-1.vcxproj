@@ -222,6 +222,7 @@
     <Image Include="app\auge_512_512_BGRA_32BPP.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app\SDKMESH\meshconvert.exe" />
     <None Include="imgui\misc\debuggers\imgui.natstepfilter" />
     <None Include="packages.config" />
     <None Include="Shaders\Pipeline.hlsli" />
