@@ -128,12 +128,18 @@
     <Image Include="app\auge_512_512_BGRA_32BPP.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="app\DirectX_Cup\cup.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Pipeline.hlsli" />
     <None Include="packages.config" />
     <None Include="imgui\misc\debuggers\imgui.natstepfilter" />
-    <None Include="app\SDKMESH\meshconvert.exe" />
+    <None Include="app\meshconvert.exe" />
+    <None Include="app\DirectX_Cup\cup._obj" />
+    <None Include="app\DirectX_Cup\cup.mtl" />
+    <None Include="app\SDKMESH\cup.sdkmesh" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\misc\debuggers\imgui.natvis" />

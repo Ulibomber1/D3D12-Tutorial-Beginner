@@ -220,9 +220,13 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="app\auge_512_512_BGRA_32BPP.png" />
+    <Image Include="app\DirectX_Cup\cup.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app\SDKMESH\meshconvert.exe" />
+    <None Include="app\DirectX_Cup\cup.mtl" />
+    <None Include="app\DirectX_Cup\cup._obj" />
+    <None Include="app\meshconvert.exe" />
+    <None Include="app\SDKMESH\cup.sdkmesh" />
     <None Include="imgui\misc\debuggers\imgui.natstepfilter" />
     <None Include="packages.config" />
     <None Include="Shaders\Pipeline.hlsli" />
