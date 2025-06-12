@@ -73,6 +73,8 @@ D3D12_INPUT_ELEMENT_DESC vertexLayout3D[] =
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 };
 
+const wchar_t* sdkmeshPath = L"app/SDKMESH/";
+
 int main()
 {
 	DXDebugLayer::Get().Init();
@@ -102,6 +104,14 @@ int main()
 			imguiDescHeap, 
 			imguiDescHeap->GetCPUDescriptorHandleForHeapStart(), 
 			imguiDescHeap->GetGPUDescriptorHandleForHeapStart());
+
+		// === Cup Vertex Data ===
+		auto cupMesh = Model::CreateFromSDKMESH(DXContext::Get().GetDevice(), L"cup.sdkmesh");
+		ComPointer<CommonStates> m_states;
+		m_states = &CommonStates(DXContext::Get().GetDevice());
+		ComPointer<EffectFactory> m_fxFactory;
+		ComPointer<EffectTextureFactory> m_modelResources;
+		Model::EffectCollection m_modelNormal;
 
 		// === Texture Data ===
 		ImageLoader::ImageData textureData;
@@ -300,6 +310,7 @@ int main()
 			if (timeAccumulatedSecs > 1.0)
 			{
 				// Only accurate if WaitForSingleObject() on the fence event blocks the cpu thread
+				// Previous comment may not be accurate, as chrono usage works as intended.
 				std::cout << "AVG FRAME TIME: " << (timeAccumulatedSecs * 1000.0) / frames << " ms\n"; 
 				std::cout << "APPROX. FPS: " << frames / timeAccumulatedSecs << "\n\n";
 				frames = 0;
